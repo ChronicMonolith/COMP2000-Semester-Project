@@ -31,11 +31,16 @@ public class Car implements Interactable {
     }
 
     public void onClick() {
+        this.speed += 2;
         System.out.printf("Speed: " + Double.toString(speed) + "\n");
     }
 
     public void move() {
         x += speed;
+
+        if(x > 1200){
+            x = -this.width; 
+        }
     }
 
     public void draw(Graphics g) {
