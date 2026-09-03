@@ -1,81 +1,239 @@
 import java.awt.*;
 
-class Car {
-    // Vehicle class
+public class Car {
 
     private double x;
     private double y;
 
-    private boolean movingRight;
+    private boolean movingDown;
 
-    private double speed = 2.5;
+    private double speed = 2.0;
 
-    public Car(double x, double y, boolean movingRight) {
+    /*
+     * TOP CAR
+     * The top traffic light is around y = 230.
+     * Cars stop around y = 190,
+     */
+
+    private static final double TOP_STOP = 190;
+
+    /*
+     * BOTTOM CAR
+     * The bottom traffic light is around y = 425.
+     * Cars stop around y = 490,
+     */
+
+    private static final double BOTTOM_STOP = 490;
+
+    /*
+     * Space between cars.
+     */
+
+    private static final double CAR_GAP = 70;
+
+    public Car(
+        double x,
+        double y,
+        boolean movingDown
+    ) {
 
         this.x = x;
+
         this.y = y;
 
-        this.movingRight = movingRight;
+        this.movingDown = movingDown;
     }
 
-    public void update(boolean bridgeOpen) {
+    public void update(
+        boolean stopSignal,
+        double frontCarY
+    ) {
 
-        // Stop when bridge is open
-        if (bridgeOpen) {
+        // ============================================
+        // TOP → BOTTOM
+        // ============================================
 
-            if (movingRight && x < 390) {
+        if (movingDown) {
 
-                x += speed;
+            /*
+             * RED/YELLOW LIGHT
+             * Car has NOT reached the stop line
+             * Move toward the light.
+             */
 
-            } else if (!movingRight && x > 610) {
+            if (stopSignal && y < TOP_STOP) {
 
-                x -= speed;
+                y += speed;
+
+                if (y > TOP_STOP) {
+
+                    y = TOP_STOP;
+                }
+
+                return;
             }
 
-        } else {
+            /*
+             * If there is a car ahead,
+             * maintain the safety gap.
+             */
 
-            if (movingRight) {
+            if (
+                frontCarY != -1 &&
+                frontCarY > y &&
+                frontCarY - y < CAR_GAP
+            ) {
 
-                x += speed;
-
-            } else {
-
-                x -= speed;
+                return;
             }
+
+            /*
+             * GREEN
+             * OR
+             * Car has already passed
+             * the stop line.
+             */
+
+            y += speed;
+        }
+
+        // ============================================
+        // BOTTOM → TOP
+        // ============================================
+
+        else {
+
+            /*
+             * RED/YELLOW LIGHT
+             * Move toward the stop line.
+             */
+
+            if (stopSignal && y > BOTTOM_STOP) {
+
+                y -= speed;
+
+                if (y < BOTTOM_STOP) {
+
+                    y = BOTTOM_STOP;
+                }
+
+                return;
+            }
+
+            /*
+             * Safety gap.
+             */
+
+            if (
+                frontCarY != -1 &&
+                frontCarY < y &&
+                y - frontCarY < CAR_GAP
+            ) {
+
+                return;
+            }
+
+            /*
+             * GREEN
+             * OR
+             * Already past the light.
+             */
+
+            y -= speed;
         }
     }
 
     public void draw(Graphics g) {
 
-        g.setColor(Color.RED);
+        // Car colour
+
+        if (movingDown) {
+
+            g.setColor(
+                new Color(220, 50, 50)
+            );
+
+        } else {
+
+            g.setColor(
+                new Color(50, 100, 220)
+            );
+        }
+
+        // Body
 
         g.fillRect(
-                (int) x,
-                (int) y,
-                35,
-                20
+            (int) x,
+            (int) y,
+            20,
+            32
         );
+
+        // Windows
+
+        g.setColor(
+            new Color(200, 220, 240)
+        );
+
+        if (movingDown) {
+
+            g.fillRect(
+                (int) x + 3,
+                (int) y + 6,
+                14,
+                8
+            );
+
+        } else {
+
+            g.fillRect(
+                (int) x + 3,
+                (int) y + 18,
+                14,
+                8
+            );
+        }
 
         // Wheels
+
         g.setColor(Color.BLACK);
 
-        g.fillOval(
-                (int) x + 5,
-                (int) y + 15,
-                8,
-                8
+        g.fillRect(
+            (int) x - 3,
+            (int) y + 5,
+            4,
+            7
         );
 
-        g.fillOval(
-                (int) x + 23,
-                (int) y + 15,
-                8,
-                8
+        g.fillRect(
+            (int) x + 19,
+            (int) y + 5,
+            4,
+            7
+        );
+
+        g.fillRect(
+            (int) x - 3,
+            (int) y + 20,
+            4,
+            7
+        );
+
+        g.fillRect(
+            (int) x + 19,
+            (int) y + 20,
+            4,
+            7
         );
     }
 
-    public double getX() {
+    public double getY() {
 
-        return x;
+        return y;
+    }
+
+    public boolean isMovingDown() {
+
+        return movingDown;
     }
 }

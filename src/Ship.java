@@ -1,73 +1,148 @@
 import java.awt.*;
 
-class Ship {
-    // Ship class
+public class Ship {
 
-    private double x = 0;
-
+    private double x;
     private double speed = 1.5;
+    private boolean movingRight;
+
+    public Ship(double startX, boolean movingRight) {
+        this.x = startX;
+        this.movingRight = movingRight;
+    }
 
     public void update() {
+        if (movingRight) {
+            x += speed;
+        } else {
+            x -= speed;
+        }
+    }
 
-        x += speed;
+    public void stopAtLight() {
 
-        // Reset ship after leaving screen
-        if (x > 1050) {
-
-            x = -150;
+        if (movingRight) {
+            x = 240;
+        } else {
+            x = 630;
         }
     }
 
     public double getX() {
-
         return x;
+    }
+
+    public boolean isMovingRight() {
+        return movingRight;
+    }
+
+    public boolean hasPassedBridge() {
+
+        if (movingRight) {
+            return x >= 550;
+        } else {
+            return x <= 400;
+        }
+    }
+
+    public boolean hasLeftScreen() {
+
+        if (movingRight) {
+            return x > 1100;
+        } else {
+            return x < -160;
+        }
+    }
+
+    public void setX(double x) {
+    this.x = x;
     }
 
     public void draw(Graphics g) {
 
-        int y = 430;
+        int y = 332;
 
-        // Ship body
-        g.setColor(Color.BLACK);
+        g.setColor(new Color(90, 60, 40));
 
-        int[] xPoints = {
-                (int) x,
-                (int) x + 100,
-                (int) x + 80,
-                (int) x + 20
-        };
+        int[] xPoints;
+        int[] yPoints;
 
-        int[] yPoints = {
+        if (movingRight) {
+
+            xPoints = new int[] {
+                (int)x,
+                (int)x + 130,
+                (int)x + 110,
+                (int)x + 20
+            };
+
+            yPoints = new int[] {
                 y,
                 y,
-                y + 30,
-                y + 30
-        };
+                y + 36,
+                y + 36
+            };
+
+        } else {
+
+            xPoints = new int[] {
+                (int)x + 130,
+                (int)x,
+                (int)x + 20,
+                (int)x + 110
+            };
+
+            yPoints = new int[] {
+                y,
+                y,
+                y + 36,
+                y + 36
+            };
+        }
 
         g.fillPolygon(
-                xPoints,
-                yPoints,
-                4
+            xPoints,
+            yPoints,
+            4
         );
 
-        // Ship cabin
-        g.setColor(Color.WHITE);
+        // Cabin
+        g.setColor(Color.LIGHT_GRAY);
 
         g.fillRect(
-                (int) x + 35,
-                y - 25,
-                35,
-                25
+            (int)x + 40,
+            y - 22,
+            50,
+            22
+        );
+
+        // Windows
+        g.setColor(
+            new Color(50, 150, 200)
+        );
+
+        g.fillRect(
+            (int)x + 50,
+            y - 16,
+            10,
+            10
+        );
+
+        g.fillRect(
+            (int)x + 70,
+            y - 16,
+            10,
+            10
         );
 
         // Smoke stack
-        g.setColor(Color.GRAY);
+        g.setColor(Color.DARK_GRAY);
 
         g.fillRect(
-                (int) x + 55,
-                y - 40,
-                10,
-                15
+            (int)x + 60,
+            y - 35,
+            10,
+            13
         );
     }
 }
