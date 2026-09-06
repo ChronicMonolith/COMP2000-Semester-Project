@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
 
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
 public class SimulationPanel extends JPanel {
 
     private ArrayList<Car> cars = new ArrayList<>();
@@ -66,6 +69,20 @@ public class SimulationPanel extends JPanel {
 
             currentShip = new Ship(850, false);
         }
+
+        // mouseListener is here so it's always active on startup
+        this.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent me) {
+                for (Car c : cars) {
+                    if (c.isClickable(me.getX(), me.getY())) {
+                        c.isSelected = true;
+                        c.onClick();
+                    }
+                    else if (c.isSelected)
+                        c.isSelected = false;
+                }
+            }
+        });
     }
 
 
@@ -699,5 +716,56 @@ public class SimulationPanel extends JPanel {
                 25,
                 86
         );
+
+        // Car Stats HUD
+
+        g.setColor(
+                new Color(0, 0, 0, 160)
+        );
+        
+        g.fillRect(
+                800,
+                15,
+                150,
+                100
+        );
+
+        g.setColor(Color.WHITE);
+
+        Car selectedCar = null;
+        for (Car c : cars) {
+            if (c.isSelected) {
+                selectedCar = c;
+                break;
+            }
+        }
+
+        if (selectedCar != null) {
+            g.drawString(
+                selectedCar.getType(),
+                815,
+                40
+            );
+            
+            g.drawString(
+                "Speed: " + selectedCar.getSpeed(),
+                815,
+                75
+            );
+
+            if (selectedCar.isMovingDown())
+                g.drawString(
+                    "Direction: South",
+                    815,
+                    100
+                );
+            else
+                g.drawString(
+                    "Direction: North",
+                    815,
+                    100
+                );
+            
+        }
     }
 }

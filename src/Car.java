@@ -1,13 +1,23 @@
 import java.awt.*;
 
-public class Car {
+public class Car implements Interactable {
 
     private double x;
     private double y;
 
+    private int width = 20;
+    private int height = 32;
+
     private boolean movingDown;
+    public boolean isMovingDown() { return this.movingDown; }
 
     private double speed = 2.0;
+    public double getSpeed() { return this.speed; }
+
+    private String type = "4 Seater";
+    public String getType() { return  this.type; }
+
+    public boolean isSelected = false;
 
     /*
      * TOP CAR
@@ -42,6 +52,23 @@ public class Car {
         this.y = y;
 
         this.movingDown = movingDown;
+    }
+
+    public boolean isClickable(int mX, int mY) { // Input is mouse position
+        if (mX < x)
+            return false;
+        if (mY < y)
+            return false;
+        if (mX > x + width)
+            return false;
+        if (mY > y + height)
+            return false;
+
+        return true;
+    }
+
+    public void onClick() {
+        System.out.printf("Speed: " + Double.toString(speed) + "\n");
     }
 
     public void update(
@@ -165,8 +192,8 @@ public class Car {
         g.fillRect(
             (int) x,
             (int) y,
-            20,
-            32
+            width,
+            height
         );
 
         // Windows
@@ -230,10 +257,5 @@ public class Car {
     public double getY() {
 
         return y;
-    }
-
-    public boolean isMovingDown() {
-
-        return movingDown;
     }
 }
