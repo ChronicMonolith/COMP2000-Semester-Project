@@ -1,81 +1,41 @@
 import java.awt.*;
 
-class Car {
-    // Vehicle class
+public class Car {
 
-    private double x;
-    private double y;
+    public double x;
+    public double y;
+    public int diameter = 16; // Circle size
 
-    private boolean movingRight;
+    public double speed;
+    public Direction direction;
 
-    private double speed = 2.5;
-
-    public Car(double x, double y, boolean movingRight) {
-
+    public Car(double x, double y, double speed, Direction direction) {
         this.x = x;
         this.y = y;
-
-        this.movingRight = movingRight;
+        this.speed = speed;
+        this.direction = direction;
     }
 
-    public void update(boolean bridgeOpen) {
-
-        // Stop when bridge is open
-        if (bridgeOpen) {
-
-            if (movingRight && x < 390) {
-
-                x += speed;
-
-            } else if (!movingRight && x > 610) {
-
-                x -= speed;
-            }
-
-        } else {
-
-            if (movingRight) {
-
-                x += speed;
-
-            } else {
-
-                x -= speed;
-            }
-        }
+    public void move() {
+        x += speed * direction.dx;
+        y += speed * direction.dy;
     }
 
-    public void draw(Graphics g) {
-
+    public void draw(Graphics2D g) {
         g.setColor(Color.RED);
+        g.fillOval((int) x, (int) y, diameter, diameter);
 
-        g.fillRect(
-                (int) x,
-                (int) y,
-                35,
-                20
-        );
-
-        // Wheels
+        // Dark border for clean visual
         g.setColor(Color.BLACK);
-
-        g.fillOval(
-                (int) x + 5,
-                (int) y + 15,
-                8,
-                8
-        );
-
-        g.fillOval(
-                (int) x + 23,
-                (int) y + 15,
-                8,
-                8
-        );
+        g.setStroke(new BasicStroke(1));
+        g.drawOval((int) x, (int) y, diameter, diameter);
     }
 
-    public double getX() {
+    public double getCenterX() {
+        return x + (diameter / 2.0);
+    }
 
-        return x;
+    public double getCenterY() {
+        return y + (diameter / 2.0);
     }
 }
