@@ -290,18 +290,18 @@ public class StraightRoadMapViewer extends JPanel {
         drawArrow(
                 g2,
                 centerX - laneOffset,
-                320,
+                380,
                 centerX - laneOffset,
-                380
+                320
         );
 
         // Northbound
         drawArrow(
                 g2,
                 centerX + laneOffset,
-                380,
+                320,
                 centerX + laneOffset,
-                320
+                380
         );
 
         // -----------------------------------------------------
