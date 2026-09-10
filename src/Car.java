@@ -7,6 +7,7 @@ public class Car {
     public int diameter = 16;
     public Direction direction;
     public boolean hasTurned = false;
+    public boolean stopped = false;
 
     public double speed;
 
@@ -22,17 +23,13 @@ public class Car {
 
     public void startTurn(Direction newDirection, int laneCenterX, int laneCenterY) {
         this.direction = newDirection;
-        this.state = CarState.TURNING;
-
         this.x = laneCenterX - (diameter / 2.0);
         this.y = laneCenterY - (diameter / 2.0);
-
         this.state = CarState.DRIVING;
     }
 
     public TurnDirection chooseRandomTurn() {
         double r = Math.random();
-
         if (r < 0.33)
             return TurnDirection.LEFT;
         if (r < 0.66)
@@ -41,13 +38,17 @@ public class Car {
     }
 
     public void move() {
+        if (stopped) {
+            System.out.println("Car at (" + x + ", " + y + ") is STOPPED.");
+            return;
+        }
         x += speed * direction.dx;
         y += speed * direction.dy;
     }
 
     public void draw(Graphics2D g) {
         g.setColor(Color.RED);
-        g.fillOval((int) x, (int) y, diameter, diameter);
+        g.fillOval((int) Math.round(x), (int) Math.round(y), diameter, diameter);
     }
 
     public double getCenterX() {
