@@ -13,7 +13,7 @@ public class CarManager {
     public CarManager(MapPanel panel) {
         this.panel = panel;
 
-        spawnTimer = new Timer(1200, e -> spawnCar());
+        spawnTimer = new Timer(200, e -> spawnCar());
         spawnTimer.start();
     }
 

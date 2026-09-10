@@ -51,6 +51,10 @@ public class Car {
         g.fillOval((int) Math.round(x), (int) Math.round(y), diameter, diameter);
     }
 
+    public Direction getDirection() {
+        return this.direction;
+    }
+
     public double getCenterX() {
         return x + (diameter / 2.0);
     }

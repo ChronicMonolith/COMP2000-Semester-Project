@@ -13,6 +13,53 @@ public class CarController {
     }
 
     private boolean checkCollisionAhead() {
+        double safetyDistance = 40.0;
+
+        for (Car other : allCars) {
+            if (other == this.car)
+                continue; // Skip checking against itself
+
+            double dx = other.getCenterX() - car.getCenterX();
+            double dy = other.getCenterY() - car.getCenterY();
+            double distance = Math.hypot(dx, dy);
+
+            // Ignore cars that spawned directly on top of each other (distance < 15px)
+            // to prevent overlapping cars from locking up permanently.
+            if (distance < 15.0) {
+                continue;
+            }
+
+            switch (car.getDirection()) {
+                case EAST:
+                    // Other car is ahead horizontally in the same lane
+                    if (dx > 0 && dx <= safetyDistance && Math.abs(dy) < 15) {
+                        return true;
+                    }
+                    break;
+
+                case WEST:
+                    // Other car is ahead horizontally (moving left) in the same lane
+                    if (dx < 0 && Math.abs(dx) <= safetyDistance && Math.abs(dy) < 15) {
+                        return true;
+                    }
+                    break;
+
+                case SOUTH:
+                    // Other car is ahead vertically (moving down) in the same lane
+                    if (dy > 0 && dy <= safetyDistance && Math.abs(dx) < 15) {
+                        return true;
+                    }
+                    break;
+
+                case NORTH:
+                    // Other car is ahead vertically (moving up) in the same lane
+                    if (dy < 0 && Math.abs(dy) <= safetyDistance && Math.abs(dx) < 15) {
+                        return true;
+                    }
+                    break;
+            }
+        }
+
         return false;
     }
 
@@ -213,6 +260,7 @@ public class CarController {
         if (car.stopped) {
             return;
         }
+
 
         double cx = car.getCenterX();
         double cy = car.getCenterY();
