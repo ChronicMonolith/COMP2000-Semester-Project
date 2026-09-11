@@ -5,7 +5,7 @@ public class Road {
 
     public ArrayList<Lane> lanes = new ArrayList<>();
 
-    public void addLane(Lane lane) {
+    public <T extends Lane> void addLane(T lane) {
         lanes.add(lane);
     }
 
