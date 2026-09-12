@@ -1,6 +1,6 @@
 import java.awt.*;
 
-public class Car {
+public class Car implements Interactable {
 
     public double x;
     public double y;
@@ -16,6 +16,7 @@ public class Car {
 
     public Car(double x, double y, double speed, Direction direction) {
         this.x = x;
+
         this.y = y;
         this.speed = speed;
         this.direction = direction;
