@@ -6,6 +6,16 @@ import javax.swing.Timer;
 public class CarManager {
 
     private final List<Car> cars = new ArrayList<>();
+    public List<Car> getCars() { return cars; }
+    public Car getSelectedCar() {
+        for (Car c : cars) {
+            if (c.isSelected) {
+                return c;
+            }
+        }
+        return null;
+    }
+
     private final List<CarController> controllers = new ArrayList<>();
     private final MapPanel panel;
     private final Timer spawnTimer;

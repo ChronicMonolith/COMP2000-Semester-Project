@@ -1,4 +1,4 @@
 public interface Interactable {
-    boolean isClickable(int x, int y);
+    boolean isClickable(int mx, int my);
     void onClick();
 }

@@ -1,7 +1,11 @@
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
 import java.util.ArrayList;
 
 public class MapPanel extends JPanel implements ActionListener {
@@ -27,6 +31,8 @@ public class MapPanel extends JPanel implements ActionListener {
 
         ArrayList<Road> roads = new ArrayList<>();
         ArrayList<LaneDivider> dividers = new ArrayList<>();
+
+        HUD HUD;
 
         CarManager carManager;
 
@@ -111,6 +117,20 @@ public class MapPanel extends JPanel implements ActionListener {
 
                 carManager = new CarManager(this);
 
+                HUD = new HUD(700, 575);
+
+                // This is how onClick is accessed in Car
+                this.addMouseListener(new MouseAdapter() {
+                        public void mouseClicked(MouseEvent me) {
+                                for (Car c : carManager.getCars()) {
+                                        if (c.isClickable(me.getX(), me.getY())) {
+                                                c.onClick();
+                                                break;
+                                        }
+                                }
+                         }
+                });
+
                 timer = new Timer(16, this);
                 timer.start();
         }
@@ -145,6 +165,8 @@ public class MapPanel extends JPanel implements ActionListener {
                 carManager.drawAll(g2);
 
                 drawTrafficLights(g2);
+
+                HUD.draw(g2, carManager);
         }
 
         private void drawTrafficLights(Graphics2D g2) {
