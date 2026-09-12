@@ -6,7 +6,11 @@ import javax.swing.Timer;
 public class CarManager {
 
     private final List<Car> cars = new ArrayList<>();
-    public List<Car> getCars() { return cars; }
+
+    public List<Car> getCars() {
+        return cars;
+    }
+
     public Car getSelectedCar() {
         for (Car c : cars) {
             if (c.isSelected) {
@@ -35,19 +39,19 @@ public class CarManager {
         Car newCar = null;
 
         switch (spawnSide) {
-            case 0: // Spawn WEST moving EAST
+            case 0:
                 Lane topLane = panel.topRoad.lanes.get(0);
                 int y1 = topLane.startY + (topLane.width / 2) - 7;
                 newCar = new Car(-30, y1, 2.0, Direction.EAST);
                 break;
 
-            case 1: // Spawn EAST moving WEST
+            case 1:
                 Lane bottomLane = panel.bottomRoad.lanes.get(1);
                 int y2 = bottomLane.startY + (bottomLane.width / 2) - 7;
                 newCar = new Car(1310, y2, 2.0, Direction.WEST);
                 break;
 
-            case 2: // Spawn NORTH moving SOUTH
+            case 2:
                 Lane leftLane = panel.leftRoad.lanes.get(1);
                 int x1 = leftLane.startX + (leftLane.width / 2) - 7;
                 newCar = new Car(x1, -30, 2.0, Direction.SOUTH);
@@ -59,11 +63,10 @@ public class CarManager {
             if (!isSpawnPointBlocked(newCar)) {
                 cars.add(newCar);
                 controllers.add(new CarController(newCar, panel, cars));
-                // DEBUG: Successfully spawned
+
                 System.out.println("Spawned " + newCar.direction + " car at (" + newCar.x + ", " + newCar.y
                         + ") | Total cars: " + cars.size());
             } else {
-                // DEBUG: Blocked spawn
                 System.out
                         .println("Spawn BLOCKED for " + newCar.direction + " at (" + newCar.x + ", " + newCar.y + ")");
             }
@@ -73,7 +76,7 @@ public class CarManager {
     private boolean isSpawnPointBlocked(Car newCar) {
         for (Car c : cars) {
             double dist = Math.hypot(c.x - newCar.x, c.y - newCar.y);
-            if (dist < 40.0) { // Block spawn if another car is within 40px
+            if (dist < 40.0) {
                 return true;
             }
         }

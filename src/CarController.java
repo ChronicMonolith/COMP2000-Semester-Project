@@ -15,24 +15,20 @@ public class CarController {
     private boolean isLightRedAhead() {
         double cx = car.getCenterX();
         double cy = car.getCenterY();
-        int stopDistance = 35; // Distance in pixels before reaching the intersection bound
+        int stopDistance = 35;
 
-        // Check Top-Left Intersection (Junction 1)
         if (checkIntersectionStop(panel.topLeft, panel.getJunction1Lights(), cx, cy, stopDistance)) {
             return true;
         }
 
-        // Check Bottom-Center Intersection (Junction 2)
         if (checkIntersectionStop(panel.bottomCenter, panel.getJunction2Lights(), cx, cy, stopDistance)) {
             return true;
         }
 
-        // Check Bottom-Right T-Intersection (Junction 3)
         if (checkIntersectionStop(panel.bottomRight, panel.getJunction3Lights(), cx, cy, stopDistance)) {
             return true;
         }
 
-        // Check Top-Right Intersection (Junction 4)
         if (checkIntersectionStop(panel.topRight, panel.getJunction4Lights(), cx, cy, stopDistance)) {
             return true;
         }

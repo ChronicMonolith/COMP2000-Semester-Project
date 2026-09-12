@@ -3,7 +3,7 @@ import java.awt.*;
 public class Tintersection extends Intersection {
 
     public Tintersection(int x, int y, int roadWidth) {
-        super(x, y, roadWidth, roadWidth); // width & height for detection
+        super(x, y, roadWidth, roadWidth);
     }
 
     @Override
