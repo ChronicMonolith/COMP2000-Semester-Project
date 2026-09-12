@@ -1,239 +1,98 @@
 import java.awt.*;
 
-public class Car {
+public class Car implements Interactable {
+    public double x;
+    public double y;
+    public int diameter = 16;
+    public Direction direction;
+    public boolean hasTurned = false;
+    public boolean stopped = false;
 
-    private double x;
-    private double y;
+    public double speed;
 
-    private boolean movingDown;
+    public CarState state = CarState.DRIVING;
+    public TurnDirection turnDirection = TurnDirection.STRAIGHT;
 
-    private double speed = 2.0;
+    public boolean isSelected;
 
-    /*
-     * TOP CAR
-     * The top traffic light is around y = 230.
-     * Cars stop around y = 190,
-     */
-
-    private static final double TOP_STOP = 190;
-
-    /*
-     * BOTTOM CAR
-     * The bottom traffic light is around y = 425.
-     * Cars stop around y = 490,
-     */
-
-    private static final double BOTTOM_STOP = 490;
-
-    /*
-     * Space between cars.
-     */
-
-    private static final double CAR_GAP = 70;
-
-    public Car(
-        double x,
-        double y,
-        boolean movingDown
-    ) {
-
+    public Car(double x, double y, double speed, Direction direction) {
         this.x = x;
 
         this.y = y;
+        this.speed = speed;
+        this.direction = direction;
 
-        this.movingDown = movingDown;
+        isSelected = false;
     }
 
-    public void update(
-        boolean stopSignal,
-        double frontCarY
-    ) {
-
-        // ============================================
-        // TOP → BOTTOM
-        // ============================================
-
-        if (movingDown) {
-
-            /*
-             * RED/YELLOW LIGHT
-             * Car has NOT reached the stop line
-             * Move toward the light.
-             */
-
-            if (stopSignal && y < TOP_STOP) {
-
-                y += speed;
-
-                if (y > TOP_STOP) {
-
-                    y = TOP_STOP;
-                }
-
-                return;
-            }
-
-            /*
-             * If there is a car ahead,
-             * maintain the safety gap.
-             */
-
-            if (
-                frontCarY != -1 &&
-                frontCarY > y &&
-                frontCarY - y < CAR_GAP
-            ) {
-
-                return;
-            }
-
-            /*
-             * GREEN
-             * OR
-             * Car has already passed
-             * the stop line.
-             */
-
-            y += speed;
+    public boolean isClickable(int mX, int mY) {
+        if (mX < x - diameter) {
+            isSelected = false;
+            return isSelected;
         }
-
-        // ============================================
-        // BOTTOM → TOP
-        // ============================================
-
-        else {
-
-            /*
-             * RED/YELLOW LIGHT
-             * Move toward the stop line.
-             */
-
-            if (stopSignal && y > BOTTOM_STOP) {
-
-                y -= speed;
-
-                if (y < BOTTOM_STOP) {
-
-                    y = BOTTOM_STOP;
-                }
-
-                return;
-            }
-
-            /*
-             * Safety gap.
-             */
-
-            if (
-                frontCarY != -1 &&
-                frontCarY < y &&
-                y - frontCarY < CAR_GAP
-            ) {
-
-                return;
-            }
-
-            /*
-             * GREEN
-             * OR
-             * Already past the light.
-             */
-
-            y -= speed;
+        else if (mY < y - diameter) {
+            isSelected = false;
+            return isSelected;
         }
+        else if (mX > x + diameter) {
+            isSelected = false;
+            return isSelected;
+        }
+        else if (mY > y + diameter) {
+            isSelected = false;
+            return isSelected;
+        }
+        isSelected = true;
+        return isSelected;
     }
 
-    public void draw(Graphics g) {
-
-        // Car colour
-
-        if (movingDown) {
-
-            g.setColor(
-                new Color(220, 50, 50)
-            );
-
-        } else {
-
-            g.setColor(
-                new Color(50, 100, 220)
-            );
-        }
-
-        // Body
-
-        g.fillRect(
-            (int) x,
-            (int) y,
-            20,
-            32
-        );
-
-        // Windows
-
-        g.setColor(
-            new Color(200, 220, 240)
-        );
-
-        if (movingDown) {
-
-            g.fillRect(
-                (int) x + 3,
-                (int) y + 6,
-                14,
-                8
-            );
-
-        } else {
-
-            g.fillRect(
-                (int) x + 3,
-                (int) y + 18,
-                14,
-                8
-            );
-        }
-
-        // Wheels
-
-        g.setColor(Color.BLACK);
-
-        g.fillRect(
-            (int) x - 3,
-            (int) y + 5,
-            4,
-            7
-        );
-
-        g.fillRect(
-            (int) x + 19,
-            (int) y + 5,
-            4,
-            7
-        );
-
-        g.fillRect(
-            (int) x - 3,
-            (int) y + 20,
-            4,
-            7
-        );
-
-        g.fillRect(
-            (int) x + 19,
-            (int) y + 20,
-            4,
-            7
-        );
+    public void onClick() {
+        isSelected = true;
     }
 
-    public double getY() {
-
-        return y;
+    public void startTurn(Direction newDirection, int laneCenterX, int laneCenterY) {
+        this.direction = newDirection;
+        this.x = laneCenterX - (diameter / 2.0);
+        this.y = laneCenterY - (diameter / 2.0);
+        this.state = CarState.DRIVING;
     }
 
-    public boolean isMovingDown() {
+    public TurnDirection chooseRandomTurn() {
+        double r = Math.random();
+        if (r < 0.33)
+            return TurnDirection.LEFT;
+        if (r < 0.66)
+            return TurnDirection.RIGHT;
+        return TurnDirection.STRAIGHT;
+    }
 
-        return movingDown;
+    public void move() {
+        if (stopped) {
+            System.out.println("Car at (" + x + ", " + y + ") is STOPPED.");
+            return;
+        }
+        x += speed * direction.dx;
+        y += speed * direction.dy;
+    }
+
+    public void draw(Graphics2D g) {
+        if (isSelected)
+            g.setColor(Color.GREEN);
+        else
+            g.setColor(Color.RED);
+
+        g.fillOval((int) Math.round(x), (int) Math.round(y), diameter, diameter);
+    }
+
+    public Direction getDirection() {
+        return this.direction;
+    }
+
+    public double getCenterX() {
+        return x + (diameter / 2.0);
+    }
+
+    public double getCenterY() {
+        return y + (diameter / 2.0);
     }
 }
