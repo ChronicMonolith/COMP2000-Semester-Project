@@ -1,7 +1,6 @@
 import java.awt.*;
 
-public class Car {
-
+public class Car implements Interactable {
     public double x;
     public double y;
     public int diameter = 16;
@@ -14,11 +13,41 @@ public class Car {
     public CarState state = CarState.DRIVING;
     public TurnDirection turnDirection = TurnDirection.STRAIGHT;
 
+    public boolean isSelected;
+
     public Car(double x, double y, double speed, Direction direction) {
         this.x = x;
+
         this.y = y;
         this.speed = speed;
         this.direction = direction;
+
+        isSelected = false;
+    }
+
+    public boolean isClickable(int mX, int mY) {
+        if (mX < x - diameter) {
+            isSelected = false;
+            return isSelected;
+        }
+        else if (mY < y - diameter) {
+            isSelected = false;
+            return isSelected;
+        }
+        else if (mX > x + diameter) {
+            isSelected = false;
+            return isSelected;
+        }
+        else if (mY > y + diameter) {
+            isSelected = false;
+            return isSelected;
+        }
+        isSelected = true;
+        return isSelected;
+    }
+
+    public void onClick() {
+        isSelected = true;
     }
 
     public void startTurn(Direction newDirection, int laneCenterX, int laneCenterY) {
@@ -47,7 +76,11 @@ public class Car {
     }
 
     public void draw(Graphics2D g) {
-        g.setColor(Color.RED);
+        if (isSelected)
+            g.setColor(Color.GREEN);
+        else
+            g.setColor(Color.RED);
+
         g.fillOval((int) Math.round(x), (int) Math.round(y), diameter, diameter);
     }
 

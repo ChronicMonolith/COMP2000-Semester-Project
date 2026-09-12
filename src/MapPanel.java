@@ -1,7 +1,11 @@
 import javax.swing.*;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
 import java.util.ArrayList;
 
 public class MapPanel extends JPanel implements ActionListener {
@@ -28,6 +32,8 @@ public class MapPanel extends JPanel implements ActionListener {
         ArrayList<Road> roads = new ArrayList<>();
         ArrayList<LaneDivider> dividers = new ArrayList<>();
 
+        HUD HUD;
+
         CarManager carManager;
 
         Direction direction;
@@ -48,7 +54,7 @@ public class MapPanel extends JPanel implements ActionListener {
 
                 int topY = 180;
                 int bottomY = 520;
-                
+
                 try {
                         initializeLayout(roadWidth, laneWidth, leftX, centerX, rightX, topY, bottomY);
                 } catch (IllegalArgumentException ex) {
@@ -59,13 +65,31 @@ public class MapPanel extends JPanel implements ActionListener {
 
                 carManager = new CarManager(this);
 
+                HUD = new HUD(700, 575);
+
+                this.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mouseClicked(MouseEvent me) {
+                                try {
+                                        for (Car c : carManager.getCars()) {
+                                                if (c.isClickable(me.getX(), me.getY())) {
+                                                        c.onClick();
+                                                        break;
+                                                }
+                                        }
+                                } catch (Exception ex) {
+                                        System.err.println("Error handling mouse click event: " + ex.getMessage());
+                                }
+                        }
+                });
+
                 timer = new Timer(16, this);
                 timer.start();
         }
 
         /**
          * Initializes the layout of roads, lanes, intersections, and traffic lights.
-          @throws IllegalArgumentException 
+        @throws IllegalArgumentException
          */
         private void initializeLayout(int roadWidth, int laneWidth, int leftX, int centerX, int rightX, int topY, int bottomY)
                         throws IllegalArgumentException {
@@ -143,31 +167,26 @@ public class MapPanel extends JPanel implements ActionListener {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g;
 
-                try {
-                        for (Road r : roads) {
-                                r.draw(g2);
-                        }
-
-                        for (LaneDivider d : dividers) {
-                                d.draw(g2);
-                        }
-
-                        topCenter.draw(g2);
-                        bottomLeft.draw(g2);
-
-                        topLeft.draw(g2);
-                        topRight.draw(g2);
-                        bottomCenter.draw(g2);
-                        bottomRight.draw(g2);
-
-                        carManager.drawAll(g2);
-                        drawTrafficLights(g2);
-
-                } catch (NullPointerException npe) {
-                        System.err.println("Rendering skipped due to uninitialized component: " + npe.getMessage());
-                } catch (Exception ex) {
-                        System.err.println("Error during rendering frame: " + ex.getMessage());
+                for (Road r : roads) {
+                        r.draw(g2);
                 }
+
+                for (LaneDivider d : dividers) {
+                        d.draw(g2);
+                }
+
+                topCenter.draw(g2);
+                bottomLeft.draw(g2);
+
+                topLeft.draw(g2);
+                topRight.draw(g2);
+                bottomCenter.draw(g2);
+                bottomRight.draw(g2);
+                carManager.drawAll(g2);
+
+                drawTrafficLights(g2);
+
+                HUD.draw(g2, carManager);
         }
 
         private void drawTrafficLights(Graphics2D g2) {
