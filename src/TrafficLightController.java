@@ -16,7 +16,7 @@ public class TrafficLightController {
 
     private Timer timer;
 
-    private final int greenTime = 5000;
+    private final int greenTime = 8000;
     private final int yellowTime = 2000;
 
     private int phase = 0;
