@@ -48,6 +48,31 @@ public class MapPanel extends JPanel implements ActionListener {
 
                 int topY = 180;
                 int bottomY = 520;
+                
+                try {
+                        initializeLayout(roadWidth, laneWidth, leftX, centerX, rightX, topY, bottomY);
+                } catch (IllegalArgumentException ex) {
+                        System.err.println("Failed to initialize map dimensions: " + ex.getMessage());
+                } catch (Exception ex) {
+                        System.err.println("Unexpected error initializing map elements: " + ex.getMessage());
+                }
+
+                carManager = new CarManager(this);
+
+                timer = new Timer(16, this);
+                timer.start();
+        }
+
+        /**
+         * Initializes the layout of roads, lanes, intersections, and traffic lights.
+          @throws IllegalArgumentException 
+         */
+        private void initializeLayout(int roadWidth, int laneWidth, int leftX, int centerX, int rightX, int topY, int bottomY)
+                        throws IllegalArgumentException {
+
+                if (roadWidth <= 0 || laneWidth <= 0) {
+                        throw new IllegalArgumentException("Road and lane widths must be greater than zero.");
+                }
 
                 topRoad = new Road();
                 topRoad.addLane(new Lane(0, topY - laneWidth, 1280, topY - laneWidth, laneWidth, new Color(60, 60, 60),
@@ -55,33 +80,25 @@ public class MapPanel extends JPanel implements ActionListener {
                 topRoad.addLane(new Lane(0, topY, 1280, topY, laneWidth, new Color(60, 60, 60), Direction.WEST));
 
                 bottomRoad = new Road();
-                bottomRoad
-                                .addLane(new Lane(0, bottomY - laneWidth, 1280, bottomY - laneWidth, laneWidth,
-                                                new Color(60, 60, 60),
-                                                Direction.EAST));
-                bottomRoad.addLane(
-                                new Lane(0, bottomY, 1280, bottomY, laneWidth, new Color(60, 60, 60), Direction.WEST));
+                bottomRoad.addLane(new Lane(0, bottomY - laneWidth, 1280, bottomY - laneWidth, laneWidth,
+                                new Color(60, 60, 60), Direction.EAST));
+                bottomRoad.addLane(new Lane(0, bottomY, 1280, bottomY, laneWidth, new Color(60, 60, 60), Direction.WEST));
 
                 leftRoad = new Road();
-                leftRoad.addLane(
-                                new Lane(leftX - laneWidth, 0, leftX - laneWidth, 720, laneWidth, new Color(60, 60, 60),
-                                                Direction.NORTH));
+                leftRoad.addLane(new Lane(leftX - laneWidth, 0, leftX - laneWidth, 720, laneWidth, new Color(60, 60, 60),
+                                Direction.NORTH));
                 leftRoad.addLane(new Lane(leftX, 0, leftX, 720, laneWidth, new Color(60, 60, 60), Direction.SOUTH));
 
                 centerRoad = new Road();
-                centerRoad
-                                .addLane(new Lane(centerX - laneWidth, 0, centerX - laneWidth, 720, laneWidth,
-                                                new Color(60, 60, 60),
-                                                Direction.NORTH));
-                centerRoad.addLane(
-                                new Lane(centerX, 0, centerX, 720, laneWidth, new Color(60, 60, 60), Direction.SOUTH));
+                centerRoad.addLane(new Lane(centerX - laneWidth, 0, centerX - laneWidth, 720, laneWidth,
+                                new Color(60, 60, 60), Direction.NORTH));
+                centerRoad.addLane(new Lane(centerX, 0, centerX, 720, laneWidth, new Color(60, 60, 60), Direction.SOUTH));
 
                 rightRoad = new Road();
                 rightRoad.addLane(new Lane(rightX - laneWidth, 0, rightX - laneWidth, bottomY + laneWidth, laneWidth,
                                 new Color(51, 51, 51), Direction.NORTH));
-                rightRoad.addLane(
-                                new Lane(rightX, 0, rightX, bottomY + laneWidth, laneWidth, new Color(60, 60, 60),
-                                                Direction.SOUTH));
+                rightRoad.addLane(new Lane(rightX, 0, rightX, bottomY + laneWidth, laneWidth, new Color(60, 60, 60),
+                                Direction.SOUTH));
 
                 roads.add(topRoad);
                 roads.add(bottomRoad);
@@ -108,16 +125,15 @@ public class MapPanel extends JPanel implements ActionListener {
                 junction2Lights = new TrafficLightController();
                 junction3Lights = new TrafficLightController();
                 junction4Lights = new TrafficLightController();
-
-                carManager = new CarManager(this);
-
-                timer = new Timer(16, this);
-                timer.start();
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-                carManager.updateAll();
+                try {
+                        carManager.updateAll();
+                } catch (Exception ex) {
+                        System.err.println("Error updating simulation state: " + ex.getMessage());
+                }
                 repaint();
         }
 
@@ -127,24 +143,31 @@ public class MapPanel extends JPanel implements ActionListener {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g;
 
-                for (Road r : roads) {
-                        r.draw(g2);
+                try {
+                        for (Road r : roads) {
+                                r.draw(g2);
+                        }
+
+                        for (LaneDivider d : dividers) {
+                                d.draw(g2);
+                        }
+
+                        topCenter.draw(g2);
+                        bottomLeft.draw(g2);
+
+                        topLeft.draw(g2);
+                        topRight.draw(g2);
+                        bottomCenter.draw(g2);
+                        bottomRight.draw(g2);
+
+                        carManager.drawAll(g2);
+                        drawTrafficLights(g2);
+
+                } catch (NullPointerException npe) {
+                        System.err.println("Rendering skipped due to uninitialized component: " + npe.getMessage());
+                } catch (Exception ex) {
+                        System.err.println("Error during rendering frame: " + ex.getMessage());
                 }
-
-                for (LaneDivider d : dividers) {
-                        d.draw(g2);
-                }
-
-                topCenter.draw(g2);
-                bottomLeft.draw(g2);
-
-                topLeft.draw(g2);
-                topRight.draw(g2);
-                bottomCenter.draw(g2);
-                bottomRight.draw(g2);
-                carManager.drawAll(g2);
-
-                drawTrafficLights(g2);
         }
 
         private void drawTrafficLights(Graphics2D g2) {
