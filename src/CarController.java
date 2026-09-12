@@ -12,47 +12,113 @@ public class CarController {
         this.allCars = allCars;
     }
 
+    private boolean isLightRedAhead() {
+        double cx = car.getCenterX();
+        double cy = car.getCenterY();
+        int stopDistance = 35; // Distance in pixels before reaching the intersection bound
+
+        // Check Top-Left Intersection (Junction 1)
+        if (checkIntersectionStop(panel.topLeft, panel.getJunction1Lights(), cx, cy, stopDistance)) {
+            return true;
+        }
+
+        // Check Bottom-Center Intersection (Junction 2)
+        if (checkIntersectionStop(panel.bottomCenter, panel.getJunction2Lights(), cx, cy, stopDistance)) {
+            return true;
+        }
+
+        // Check Bottom-Right T-Intersection (Junction 3)
+        if (checkIntersectionStop(panel.bottomRight, panel.getJunction3Lights(), cx, cy, stopDistance)) {
+            return true;
+        }
+
+        // Check Top-Right Intersection (Junction 4)
+        if (checkIntersectionStop(panel.topRight, panel.getJunction4Lights(), cx, cy, stopDistance)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean checkIntersectionStop(Intersection intersection, TrafficLightController tlc, double cx, double cy,
+            int buffer) {
+        if (tlc == null || intersection == null)
+            return false;
+
+        switch (car.getDirection()) {
+            case EAST:
+
+                if (cx < intersection.x && cx >= intersection.x - buffer) {
+                    if (cy >= intersection.y && cy <= intersection.y + intersection.height) {
+                        return !tlc.canEastMove();
+                    }
+                }
+                break;
+
+            case WEST:
+                if (cx > intersection.x + intersection.width && cx <= intersection.x + intersection.width + buffer) {
+                    if (cy >= intersection.y && cy <= intersection.y + intersection.height) {
+                        return !tlc.canWestMove();
+                    }
+                }
+                break;
+
+            case SOUTH:
+                if (cy < intersection.y && cy >= intersection.y - buffer) {
+                    if (cx >= intersection.x && cx <= intersection.x + intersection.width) {
+                        return !tlc.canSouthMove();
+                    }
+                }
+                break;
+
+            case NORTH:
+                if (cy > intersection.y + intersection.height && cy <= intersection.y + intersection.height + buffer) {
+                    if (cx >= intersection.x && cx <= intersection.x + intersection.width) {
+                        return !tlc.canNorthMove();
+                    }
+                }
+                break;
+        }
+
+        return false;
+    }
+
     private boolean checkCollisionAhead() {
         double safetyDistance = 40.0;
 
         for (Car other : allCars) {
             if (other == this.car)
-                continue; // Skip checking against itself
+                continue;
 
             double dx = other.getCenterX() - car.getCenterX();
             double dy = other.getCenterY() - car.getCenterY();
             double distance = Math.hypot(dx, dy);
 
-            // Ignore cars that spawned directly on top of each other (distance < 15px)
-            // to prevent overlapping cars from locking up permanently.
             if (distance < 15.0) {
                 continue;
             }
 
             switch (car.getDirection()) {
                 case EAST:
-                    // Other car is ahead horizontally in the same lane
+
                     if (dx > 0 && dx <= safetyDistance && Math.abs(dy) < 15) {
                         return true;
                     }
                     break;
 
                 case WEST:
-                    // Other car is ahead horizontally (moving left) in the same lane
                     if (dx < 0 && Math.abs(dx) <= safetyDistance && Math.abs(dy) < 15) {
                         return true;
                     }
                     break;
 
                 case SOUTH:
-                    // Other car is ahead vertically (moving down) in the same lane
                     if (dy > 0 && dy <= safetyDistance && Math.abs(dx) < 15) {
                         return true;
                     }
                     break;
 
                 case NORTH:
-                    // Other car is ahead vertically (moving up) in the same lane
                     if (dy < 0 && Math.abs(dy) <= safetyDistance && Math.abs(dx) < 15) {
                         return true;
                     }
@@ -256,12 +322,10 @@ public class CarController {
     }
 
     public void update() {
-        car.stopped = checkCollisionAhead();
+        car.stopped = checkCollisionAhead() || isLightRedAhead();
         if (car.stopped) {
             return;
         }
-
-
         double cx = car.getCenterX();
         double cy = car.getCenterY();
 
@@ -270,9 +334,10 @@ public class CarController {
         boolean inTopRight = panel.topRight.contains((int) cx, (int) cy);
         boolean inBottomLeft = panel.bottomLeft.contains((int) cx, (int) cy);
         boolean inBottomCenter = panel.bottomCenter.contains((int) cx, (int) cy);
-        boolean inT = panel.bottomRight.contains((int) cx, (int) cy);
+        boolean inBottomRight = panel.bottomRight.contains((int) cx, (int) cy);
 
-        boolean inAnyIntersection = inTopLeft || inTopCenter || inTopRight || inBottomLeft || inBottomCenter || inT;
+        boolean inAnyIntersection = inTopLeft || inTopCenter || inTopRight || inBottomLeft || inBottomCenter
+                || inBottomRight;
 
         if (!inAnyIntersection) {
             car.hasTurned = false;
@@ -281,7 +346,7 @@ public class CarController {
         if (!car.hasTurned && inAnyIntersection) {
             TurnDirection randomTurn = car.chooseRandomTurn();
 
-            if (inT) {
+            if (inBottomRight) {
                 handleTIntersection(randomTurn);
             } else if (inTopLeft) {
                 handleTopLeftTurn(randomTurn);
