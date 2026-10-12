@@ -10,8 +10,6 @@ public class Road {
     }
 
     public void draw(Graphics2D g) {
-        for (Lane lane : lanes) {
-            lane.draw(g);
-        }
+        lanes.stream().forEach(lane -> lane.draw(g));
     }
 }

@@ -167,13 +167,9 @@ public class MapPanel extends JPanel implements ActionListener {
                 super.paintComponent(g);
                 Graphics2D g2 = (Graphics2D) g;
 
-                for (Road r : roads) {
-                        r.draw(g2);
-                }
+                roads.stream().forEach(r -> r.draw(g2));
 
-                for (LaneDivider d : dividers) {
-                        d.draw(g2);
-                }
+                dividers.stream().forEach(d -> d.draw(g2));
 
                 topCenter.draw(g2);
                 bottomLeft.draw(g2);
