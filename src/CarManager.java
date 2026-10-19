@@ -12,12 +12,10 @@ public class CarManager {
     }
 
     public Car getSelectedCar() {
-        for (Car c : cars) {
-            if (c.isSelected) {
-                return c;
-            }
-        }
-        return null;
+        return cars.stream()
+            .filter(c -> c.isSelected)
+            .findFirst()
+            .orElse(null);
     }
 
     private final List<CarController> controllers = new ArrayList<>();
