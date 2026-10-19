@@ -96,8 +96,6 @@ public class CarManager {
     }
 
     public void drawAll(Graphics2D g2) {
-        for (Car car : cars) {
-            car.draw(g2);
-        }
+        cars.forEach(c -> c.draw(g2));
     }
 }
