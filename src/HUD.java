@@ -1,4 +1,6 @@
 import java.awt.*;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public class HUD {
     public int x;
@@ -25,15 +27,53 @@ public class HUD {
         g.setColor(Color.WHITE);
 
         g.setFont(new Font(
-                    "Arial",
-                    Font.BOLD,
-                    16
+            "Arial",
+            Font.BOLD,
+            16
         ));
 
+        int carsTotal = carManager.getCars().size();
+        
         g.drawString(
-                "Cars: " + carManager.getCars().size(),
-                x + 30,
-                y + 40
+            "Cars: " + carsTotal,
+            x + 30,
+            y + 40
+        );
+
+        g.setFont(new Font(
+            "Arial",
+            Font.PLAIN,
+            16
+        ));
+                
+        int carsDriving = carManager.getCars().stream()
+            .filter(c -> !c.stopped)
+            .collect(Collectors.toList())
+            .size();
+        
+        g.drawString(
+            "Driving: " + carsDriving,
+            x + 30,
+            y + 60
+        );
+        
+        int carsStopped = carManager.getCars().stream()
+            .filter(c -> c.stopped)
+            .collect(Collectors.toList())
+            .size();
+        
+        g.drawString(
+            "Stopped: " + carsStopped,
+            x + 30,
+            y + 80
+        );
+
+        float carsDrivingRatio = (float) carsDriving / carsTotal * 100;
+        
+        g.drawString(
+            "% Driving: " + (int) carsDrivingRatio + "%",
+            x + 30,
+            y + 100
         );
 
         // Individual Car Data
@@ -53,41 +93,47 @@ public class HUD {
 
             g.setColor(Color.WHITE);
 
+            g.setFont(new Font(
+                "Arial",
+                Font.BOLD,
+                16
+            ));
+
             g.drawString(
-                    "Vehicle: Car",
-                    x + 315,
-                    y + 40
+                "Vehicle: Car",
+                x + 315,
+                y + 40
             );
 
             g.setFont(new Font(
-                        "Arial",
-                        Font.PLAIN,
-                        16
+                "Arial",
+                Font.PLAIN,
+                16
             ));
             
             g.drawString(
-                    "Speed: " + selectedCar.speed,
-                    x + 315,
-                    y + 60
+                "Speed: " + selectedCar.speed,
+                x + 315,
+                y + 60
             );
 
             g.drawString(
-                    "Direction: " + selectedCar.direction,
-                    x + 315,
-                    y + 80
+                "Direction: " + selectedCar.direction,
+                x + 315,
+                y + 80
             );
 
             if (selectedCar.stopped)
                 g.drawString(
-                        "State: STOPPED",
-                        x + 315,
-                        y + 100
+                    "State: STOPPED",
+                    x + 315,
+                    y + 100
                 );
             else
                 g.drawString(
-                        "State: " + selectedCar.state,
-                        x + 315,
-                        y + 100
+                    "State: " + selectedCar.state,
+                    x + 315,
+                    y + 100
                 );
         }
     }

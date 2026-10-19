@@ -1,6 +1,8 @@
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import javax.swing.Timer;
 
 public class CarManager {
@@ -8,7 +10,7 @@ public class CarManager {
     private final List<Car> cars = new ArrayList<>();
 
     public List<Car> getCars() {
-        return cars;
+        return cars.stream().collect(Collectors.toList());
     }
 
     public Car getSelectedCar() {
