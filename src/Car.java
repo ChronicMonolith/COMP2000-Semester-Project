@@ -27,27 +27,26 @@ public class Car implements Interactable {
 
     public boolean isClickable(int mX, int mY) {
         if (mX < x - diameter) {
-            isSelected = false;
-            return isSelected;
+            return false;
         }
         else if (mY < y - diameter) {
-            isSelected = false;
-            return isSelected;
+            return false;
         }
         else if (mX > x + diameter) {
-            isSelected = false;
-            return isSelected;
+            return false;
         }
         else if (mY > y + diameter) {
-            isSelected = false;
-            return isSelected;
+            return false;
         }
-        isSelected = true;
-        return isSelected;
+        return true;
     }
 
     public void onClick() {
         isSelected = true;
+    }
+
+    public void onDeselect() {
+        isSelected = false;
     }
 
     public void startTurn(Direction newDirection, int laneCenterX, int laneCenterY) {

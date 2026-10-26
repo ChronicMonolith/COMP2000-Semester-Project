@@ -72,10 +72,10 @@ public class MapPanel extends JPanel implements ActionListener {
                         public void mouseClicked(MouseEvent me) {
                                 try {
                                         for (Car c : carManager.getCars()) {
-                                                if (c.isClickable(me.getX(), me.getY())) {
+                                                if (c.isClickable(me.getX(), me.getY()))
                                                         c.onClick();
-                                                        break;
-                                                }
+                                                else
+                                                        c.onDeselect();
                                         }
                                 } catch (Exception ex) {
                                         System.err.println("Error handling mouse click event: " + ex.getMessage());
