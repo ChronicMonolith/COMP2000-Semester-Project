@@ -15,9 +15,15 @@ public class CarManager {
 
     public Car getSelectedCar() {
         return cars.stream()
-            .filter(c -> c.isSelected)
-            .findFirst()
-            .orElse(null);
+                .filter(c -> c.isSelected)
+                .findFirst()
+                .orElse(null);
+    }
+
+    public long countDrivingCars() {
+        return cars.parallelStream()
+                .filter(c -> !c.stopped)
+                .count();
     }
 
     private final List<CarController> controllers = new ArrayList<>();
@@ -95,6 +101,7 @@ public class CarManager {
                 controllers.remove(i);
             }
         }
+        System.out.println("Driving cars: " + countDrivingCars());
     }
 
     public void drawAll(Graphics2D g2) {
