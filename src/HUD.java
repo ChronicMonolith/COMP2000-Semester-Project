@@ -45,10 +45,7 @@ public class HUD {
             16
         ));
                 
-        int carsDriving = carManager.getCars().stream()
-            .filter(c -> !c.stopped)
-            .collect(Collectors.toList())
-            .size();
+        long carsDriving = carManager.countDrivingCars();
         
         g.drawString(
             "Driving: " + carsDriving,
@@ -56,10 +53,7 @@ public class HUD {
             y + 60
         );
         
-        int carsStopped = carManager.getCars().stream()
-            .filter(c -> c.stopped)
-            .collect(Collectors.toList())
-            .size();
+        long carsStopped = carsTotal - carsDriving;
         
         g.drawString(
             "Stopped: " + carsStopped,
