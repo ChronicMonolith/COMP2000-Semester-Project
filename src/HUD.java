@@ -1,5 +1,4 @@
 import java.awt.*;
-import java.util.stream.Collectors;
 
 public class HUD {
     public int x;

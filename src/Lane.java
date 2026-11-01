@@ -21,6 +21,7 @@ public class Lane {
     }
 
     public void draw(Graphics2D g) {
+        g.setColor(color);
         int dx = endX - startX;
         int dy = endY - startY;
         if (Math.abs(dx) > Math.abs(dy)) {
