@@ -1,21 +1,21 @@
 import java.awt.*;
+import java.util.EnumSet;
+
 
 public class Tintersection extends Intersection {
 
-    public Tintersection(int x, int y, int roadWidth) {
-        super(x, y, roadWidth, roadWidth);
+    /**
+     * @param centerX x of the point where the road centre lines meet
+     * @param centerY y of that point
+     */
+    public Tintersection(int centerX, int centerY, int roadWidth) {
+        super(centerX - roadWidth / 2, centerY - roadWidth / 2, roadWidth, roadWidth,
+                EnumSet.of(Direction.NORTH, Direction.EAST, Direction.WEST));
     }
 
     @Override
     public void draw(Graphics2D g) {
         g.setColor(new Color(51, 51, 51));
-
-        int hw = width / 2;
-
-        // Horizontal bar
-        g.fillRect(x - hw, y - hw, width, width);
-
-        // Vertical stem
-        g.fillRect(x - hw, y - width, width, width);
+        g.fillRect(x, y, width, height);
     }
 }

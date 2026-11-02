@@ -1,5 +1,8 @@
-import javax.swing.*;
 import java.awt.*;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Set;
 
 public class TrafficLightController {
 
@@ -9,127 +12,140 @@ public class TrafficLightController {
         GREEN
     }
 
-    private LightState northLight = LightState.RED;
-    private LightState eastLight = LightState.RED;
-    private LightState southLight = LightState.GREEN;
-    private LightState westLight = LightState.RED;
+    private static final Direction[] ORDER = { Direction.SOUTH, Direction.NORTH, Direction.EAST, Direction.WEST };
 
-    private Timer timer;
+    private final Map<Direction, LightState> lights = new EnumMap<>(Direction.class);
+    private final Set<Direction> approaches;
 
-    private final int greenTime = 2000;
-    private final int yellowTime = 8000;
-
-    private int phase = 0;
+    private SignalPhase phase;
+    private int remainingMs;
 
     public TrafficLightController() {
-        start();
+        this(EnumSet.allOf(Direction.class), 0);
     }
 
-    public void start() {
-        timer = new Timer(
-                greenTime,
-                e -> nextPhase());
-        timer.start();
+    /**
+     * @param approaches    headings that actually arrive at this junction (a T-junction has 3)
+     * @param startOffsetMs fast-forwards the cycle so neighbouring junctions are not in sync
+     */
+    public TrafficLightController(Set<Direction> approaches, int startOffsetMs) {
+        this.approaches = EnumSet.copyOf(approaches);
+        setAllRed();
+        phase = new SignalPhase.Green(firstApproach());
+        phase.enter(this);
+        remainingMs = phase.durationMs();
+        update(startOffsetMs);
     }
 
-    private void nextPhase() {
-        phase++;
-
-        switch (phase) {
-            case 1:
-                southLight = LightState.YELLOW;
-                timer.setDelay(yellowTime);
-                break;
-
-            case 2:
-                southLight = LightState.RED;
-                northLight = LightState.GREEN;
-                timer.setDelay(greenTime);
-                break;
-
-            case 3:
-                northLight = LightState.YELLOW;
-                timer.setDelay(yellowTime);
-                break;
-
-            case 4:
-                northLight = LightState.RED;
-                eastLight = LightState.GREEN;
-                timer.setDelay(greenTime);
-                break;
-
-            case 5:
-                eastLight = LightState.YELLOW;
-                timer.setDelay(yellowTime);
-                break;
-
-            case 6:
-                eastLight = LightState.RED;
-                westLight = LightState.GREEN;
-                timer.setDelay(greenTime);
-                break;
-
-            case 7:
-                westLight = LightState.YELLOW;
-                timer.setDelay(yellowTime);
-                break;
-
-            case 8:
-                westLight = LightState.RED;
-                southLight = LightState.GREEN;
-                phase = 0;
-                timer.setDelay(greenTime);
-                break;
+    public final void update(int dtMs) {
+        remainingMs -= dtMs;
+        while (remainingMs <= 0) {
+            phase = phase.next(this);
+            phase.enter(this);
+            remainingMs += phase.durationMs();
         }
     }
 
+    //used by SignalPhase
+
+    void setAllRed() {
+        for (Direction d : Direction.values()) {
+            lights.put(d, LightState.RED);
+        }
+    }
+
+    void setLight(Direction d, LightState state) {
+        lights.put(d, state);
+    }
+
+    Direction nextApproach(Direction current) {
+        int i = indexOf(current);
+        for (int step = 1; step <= ORDER.length; step++) {
+            Direction candidate = ORDER[(i + step) % ORDER.length];
+            if (approaches.contains(candidate)) {
+                return candidate;
+            }
+        }
+        return current;
+    }
+
+    private Direction firstApproach() {
+        for (Direction d : ORDER) {
+            if (approaches.contains(d)) {
+                return d;
+            }
+        }
+        throw new IllegalArgumentException("A traffic light needs at least one approach");
+    }
+
+    private static int indexOf(Direction d) {
+        for (int i = 0; i < ORDER.length; i++) {
+            if (ORDER[i] == d) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    //queries
+
+    public LightState getLight(Direction heading) {
+        return lights.get(heading);
+    }
+
+    public boolean canMove(Direction heading) {
+        return lights.get(heading) == LightState.GREEN;
+    }
+
     public LightState getNorthLight() {
-        return northLight;
+        return getLight(Direction.NORTH);
     }
 
     public void setNorthLight(LightState northLight) {
-        this.northLight = northLight;
+        setLight(Direction.NORTH, northLight);
     }
 
     public LightState getEastLight() {
-        return eastLight;
+        return getLight(Direction.EAST);
     }
 
     public void setEastLight(LightState eastLight) {
-        this.eastLight = eastLight;
+        setLight(Direction.EAST, eastLight);
     }
 
     public LightState getSouthLight() {
-        return southLight;
+        return getLight(Direction.SOUTH);
     }
 
     public void setSouthLight(LightState southLight) {
-        this.southLight = southLight;
+        setLight(Direction.SOUTH, southLight);
     }
 
     public LightState getWestLight() {
-        return westLight;
+        return getLight(Direction.WEST);
     }
 
     public void setWestLight(LightState westLight) {
-        this.westLight = westLight;
+        setLight(Direction.WEST, westLight);
     }
 
     public boolean canNorthMove() {
-        return northLight == LightState.GREEN;
+        return canMove(Direction.NORTH);
     }
 
     public boolean canEastMove() {
-        return eastLight == LightState.GREEN;
+        return canMove(Direction.EAST);
     }
 
     public boolean canSouthMove() {
-        return southLight == LightState.GREEN;
+        return canMove(Direction.SOUTH);
     }
 
     public boolean canWestMove() {
-        return westLight == LightState.GREEN;
+        return canMove(Direction.WEST);
     }
+
+    //drawing
 
     public void drawVertical(
             Graphics2D g2,
@@ -233,11 +249,5 @@ public class TrafficLightController {
                 y + 5,
                 14,
                 14);
-    }
-
-    public void stop() {
-        if (timer != null) {
-            timer.stop();
-        }
     }
 }
