@@ -27,13 +27,23 @@ public class CarController {
         double allowed = car.maxSpeed;
 
         if (car.state == CarState.DRIVING) {
+
+            Lane currentLane = panel.getLaneAt(
+                    car.getCenterX(),
+                    car.getCenterY(),
+                    car.getDirection());
+
+            if (currentLane != null) {
+                allowed = Math.min(allowed, currentLane.getSpeedLimit());
+            }
+
             allowed = Math.min(allowed, speedLimitFromSignal());
         }
 
         double carLimit = speedLimitFromCarAhead();
         allowed = Math.min(allowed, carLimit);
 
-        car.adjustSpeed(allowed, cfg.acceleration, cfg.brakeDeceleration);
+        car.adjustSpeed(allowed, cfg.brakeDeceleration);
         car.stopped = car.speed < 0.01;
 
         car.blockedFrames = (car.stopped && carLimit < 0.05) ? car.blockedFrames + 1 : 0;
@@ -84,7 +94,10 @@ public class CarController {
         return neededDeceleration <= cfg.brakeDeceleration * 1.5;
     }
 
-    /** Fastest speed that still lets the car stop (or match a leader's speed) within 'gap' pixels. */
+    /**
+     * Fastest speed that still lets the car stop (or match a leader's speed) within
+     * 'gap' pixels.
+     */
     private double brakingSpeed(double gap, double leaderSpeed) {
         return Math.sqrt(leaderSpeed * leaderSpeed + 2 * cfg.brakeDeceleration * Math.max(gap, 0));
     }
@@ -128,7 +141,7 @@ public class CarController {
         return other.id < car.id || car.blockedFrames > PATIENCE_FRAMES;
     }
 
-    //junctions
+    // junctions
 
     private void handleIntersection() {
         if (car.state == CarState.TURNING) {
@@ -161,7 +174,10 @@ public class CarController {
         }
     }
 
-    /** Only offers turns whose exit road exists at this junction, then lets the car's strategy pick. */
+    /**
+     * Only offers turns whose exit road exists at this junction, then lets the
+     * car's strategy pick.
+     */
     private TurnDirection chooseTurn(Intersection box) {
         List<TurnDirection> options = Arrays.stream(TurnDirection.values())
                 .filter(t -> box.hasExit(car.direction.after(t)))

@@ -21,9 +21,11 @@ public class SimulationConfig {
     // driving (pixels per frame, pixels per frame^2)
     public final double minSpeed = 1.6;
     public final double maxSpeed = 2.4;
-    public final double acceleration = 0.05;
+    // public final double acceleration = 0.05;
+    public final double minAcceleration = 0.02;
+    public final double maxAcceleration = 0.11;
     public final double brakeDeceleration = 0.12;
-    public final double safeGap = 26.0; // min centre-to-centre distance behind another car
+    public final double safeGap = 28.0; // min centre-to-centre distance behind another car
 
     // traffic lights
     public final int greenMs = 4000;

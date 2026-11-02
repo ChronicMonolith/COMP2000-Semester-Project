@@ -83,7 +83,10 @@ public class MapPanel extends JPanel implements ActionListener {
                 timer.start();
         }
 
-        /** Selects the closest car under the click (if any) and deselects all the others. */
+        /**
+         * Selects the closest car under the click (if any) and deselects all the
+         * others.
+         */
         private void selectCarAt(int mx, int my) {
                 Car clicked = carManager.select(c -> c.isClickable(mx, my)).stream()
                                 .min(Comparator.comparingDouble(
@@ -100,9 +103,11 @@ public class MapPanel extends JPanel implements ActionListener {
 
         /**
          * Initializes the layout of roads, lanes, intersections, and traffic lights.
-        @throws IllegalArgumentException
+         * 
+         * @throws IllegalArgumentException
          */
-        private void initializeLayout(int roadWidth, int laneWidth, int leftX, int centerX, int rightX, int topY, int bottomY)
+        private void initializeLayout(int roadWidth, int laneWidth, int leftX, int centerX, int rightX, int topY,
+                        int bottomY)
                         throws IllegalArgumentException {
 
                 if (roadWidth <= 0 || laneWidth <= 0) {
@@ -111,29 +116,35 @@ public class MapPanel extends JPanel implements ActionListener {
 
                 topRoad = new Road();
                 topRoad.addLane(new Lane(0, topY - laneWidth, 1280, topY - laneWidth, laneWidth, new Color(60, 60, 60),
-                                Direction.EAST));
-                topRoad.addLane(new Lane(0, topY, 1280, topY, laneWidth, new Color(60, 60, 60), Direction.WEST));
+                                Direction.EAST, 2.5));
+                topRoad.addLane(new Lane(0, topY, 1280, topY, laneWidth, new Color(60, 60, 60), Direction.WEST, 4));
 
                 bottomRoad = new Road();
                 bottomRoad.addLane(new Lane(0, bottomY - laneWidth, 1280, bottomY - laneWidth, laneWidth,
-                                new Color(60, 60, 60), Direction.EAST));
-                bottomRoad.addLane(new Lane(0, bottomY, 1280, bottomY, laneWidth, new Color(60, 60, 60), Direction.WEST));
+                                new Color(60, 60, 60), Direction.EAST, 4));
+                bottomRoad.addLane(
+                                new Lane(0, bottomY, 1280, bottomY, laneWidth, new Color(60, 60, 60), Direction.WEST,
+                                                1.5));
 
                 leftRoad = new Road();
-                leftRoad.addLane(new Lane(leftX - laneWidth, 0, leftX - laneWidth, 720, laneWidth, new Color(60, 60, 60),
-                                Direction.NORTH));
-                leftRoad.addLane(new Lane(leftX, 0, leftX, 720, laneWidth, new Color(60, 60, 60), Direction.SOUTH));
+                leftRoad.addLane(
+                                new Lane(leftX - laneWidth, 0, leftX - laneWidth, 720, laneWidth, new Color(60, 60, 60),
+                                                Direction.NORTH, 2.5));
+                leftRoad.addLane(
+                                new Lane(leftX, 0, leftX, 720, laneWidth, new Color(60, 60, 60), Direction.SOUTH, 1.2));
 
                 centerRoad = new Road();
                 centerRoad.addLane(new Lane(centerX - laneWidth, 0, centerX - laneWidth, 720, laneWidth,
-                                new Color(60, 60, 60), Direction.NORTH));
-                centerRoad.addLane(new Lane(centerX, 0, centerX, 720, laneWidth, new Color(60, 60, 60), Direction.SOUTH));
+                                new Color(60, 60, 60), Direction.NORTH, 2.6));
+                centerRoad.addLane(
+                                new Lane(centerX, 0, centerX, 720, laneWidth, new Color(60, 60, 60), Direction.SOUTH,
+                                                1.4));
 
                 rightRoad = new Road();
                 rightRoad.addLane(new Lane(rightX - laneWidth, 0, rightX - laneWidth, bottomY + laneWidth, laneWidth,
-                                new Color(60, 60, 60), Direction.NORTH));
+                                new Color(60, 60, 60), Direction.NORTH, 2.9));
                 rightRoad.addLane(new Lane(rightX, 0, rightX, bottomY + laneWidth, laneWidth, new Color(60, 60, 60),
-                                Direction.SOUTH));
+                                Direction.SOUTH, 1.6));
 
                 roads.add(topRoad);
                 roads.add(bottomRoad);
@@ -156,9 +167,11 @@ public class MapPanel extends JPanel implements ActionListener {
 
                 bottomRight = new Tintersection(rightX, bottomY, roadWidth);
 
-                intersections.addAll(Arrays.asList(topLeft, topCenter, topRight, bottomLeft, bottomCenter, bottomRight));
+                intersections.addAll(
+                                Arrays.asList(topLeft, topCenter, topRight, bottomLeft, bottomCenter, bottomRight));
 
-                // Every junction gets its own light, started at a different point in the cycle so they do not all turn green together.
+                // Every junction gets its own light, started at a different point in the cycle
+                // so they do not all turn green together.
                 int cycleStep = 4500;
                 for (int i = 0; i < intersections.size(); i++) {
                         Intersection junction = intersections.get(i);
@@ -168,6 +181,16 @@ public class MapPanel extends JPanel implements ActionListener {
 
         public List<Intersection> getIntersections() {
                 return intersections;
+        }
+
+        public Lane getLaneAt(double x, double y, Direction direction) {
+
+                return roads.stream()
+                                .flatMap(road -> road.lanes.stream())
+                                .filter(lane -> lane.contains(x, y))
+                                .filter(lane -> lane.getDirection() == direction)
+                                .findFirst()
+                                .orElse(null);
         }
 
         @Override

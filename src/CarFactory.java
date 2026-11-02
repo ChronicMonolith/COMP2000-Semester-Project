@@ -10,7 +10,7 @@ public class CarFactory {
 
     private final SimulationConfig cfg = SimulationConfig.getInstance();
     private final List<SpawnPoint> spawnPoints;
-
+    double acceleration = cfg.minAcceleration + Math.random() * (cfg.maxAcceleration - cfg.minAcceleration);
     private final Supplier<TurnStrategy> driverStyle = () -> ThreadLocalRandom.current().nextDouble() < 0.7
             ? TurnStrategy.preferStraight(0.6)
             : TurnStrategy.RANDOM;
@@ -25,7 +25,7 @@ public class CarFactory {
 
     public Car create(SpawnPoint sp) {
         double speed = cfg.minSpeed + ThreadLocalRandom.current().nextDouble() * (cfg.maxSpeed - cfg.minSpeed);
-        Car car = new Car(0, 0, speed, sp.direction);
+        Car car = new Car(0, 0, speed, sp.direction, acceleration);
         car.x = sp.x - car.diameter / 2.0;
         car.y = sp.y - car.diameter / 2.0;
         car.turnStrategy = driverStyle.get();
@@ -37,19 +37,22 @@ public class CarFactory {
         int w = cfg.mapWidth;
         int h = cfg.mapHeight;
 
-        // Horizontal roads: lane 0 flows EAST (enters on the left), lane 1 flows WEST (enters on the right)
+        // Horizontal roads: lane 0 flows EAST (enters on the left), lane 1 flows WEST
+        // (enters on the right)
         for (Road road : new Road[] { p.topRoad, p.bottomRoad }) {
             list.add(new SpawnPoint(-OFF_MAP, laneCentreY(road.lanes.get(0)), Direction.EAST));
             list.add(new SpawnPoint(w + OFF_MAP, laneCentreY(road.lanes.get(1)), Direction.WEST));
         }
 
-        // Full-height vertical roads: lane 0 flows NORTH (enters at the bottom), lane 1 flows SOUTH (enters at the top)
+        // Full-height vertical roads: lane 0 flows NORTH (enters at the bottom), lane 1
+        // flows SOUTH (enters at the top)
         for (Road road : new Road[] { p.leftRoad, p.centerRoad }) {
             list.add(new SpawnPoint(laneCentreX(road.lanes.get(1)), -OFF_MAP, Direction.SOUTH));
             list.add(new SpawnPoint(laneCentreX(road.lanes.get(0)), h + OFF_MAP, Direction.NORTH));
         }
 
-        // Right road ends at the T-junction, so only its SOUTH lane starts at the map edge
+        // Right road ends at the T-junction, so only its SOUTH lane starts at the map
+        // edge
         list.add(new SpawnPoint(laneCentreX(p.rightRoad.lanes.get(1)), -OFF_MAP, Direction.SOUTH));
 
         return list;

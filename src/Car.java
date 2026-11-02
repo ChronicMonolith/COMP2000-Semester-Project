@@ -13,6 +13,8 @@ public class Car implements Interactable {
     public boolean hasTurned = false;
     public boolean stopped = false;
 
+    public double acceleration;
+
     public double speed;
     public double maxSpeed;
 
@@ -35,7 +37,7 @@ public class Car implements Interactable {
     private double t;
     private Direction exitDirection;
 
-    public Car(double x, double y, double speed, Direction direction) {
+    public Car(double x, double y, double speed, Direction direction, double acceleration) {
         this.x = x;
 
         this.y = y;
@@ -44,6 +46,7 @@ public class Car implements Interactable {
         this.direction = direction;
         this.headingX = direction.dx;
         this.headingY = direction.dy;
+        this.acceleration = acceleration;
 
         isSelected = false;
     }
@@ -81,7 +84,7 @@ public class Car implements Interactable {
         return TurnDirection.STRAIGHT;
     }
 
-    public void adjustSpeed(double allowedSpeed, double acceleration, double brakeDeceleration) {
+    public void adjustSpeed(double allowedSpeed, double brakeDeceleration) {
         if (speed > allowedSpeed) {
             speed = Math.max(allowedSpeed, speed - brakeDeceleration * 3); // up to 3x brake in an emergency
         } else {
