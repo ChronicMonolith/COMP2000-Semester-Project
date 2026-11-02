@@ -1,10 +1,17 @@
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CarController {
+
+    private static final double LOOK_AHEAD = 70;
+    private static final double STOP_LINE_OFFSET = 14; // car centre stops this far before the junction box
+    private static final int PATIENCE_FRAMES = 600; // ~10 s
 
     private final Car car;
     private final MapPanel panel;
     private final List<Car> allCars;
+    private final SimulationConfig cfg = SimulationConfig.getInstance();
 
     public CarController(Car car, MapPanel panel, List<Car> allCars) {
         this.car = car;
@@ -12,353 +19,157 @@ public class CarController {
         this.allCars = allCars;
     }
 
-    private boolean isLightRedAhead() {
-        double cx = car.getCenterX();
-        double cy = car.getCenterY();
-        int stopDistance = 35;
-
-        if (checkIntersectionStop(panel.topLeft, panel.getJunction1Lights(), cx, cy, stopDistance)) {
-            return true;
-        }
-
-        if (checkIntersectionStop(panel.bottomCenter, panel.getJunction2Lights(), cx, cy, stopDistance)) {
-            return true;
-        }
-
-        if (checkIntersectionStop(panel.bottomRight, panel.getJunction3Lights(), cx, cy, stopDistance)) {
-            return true;
-        }
-
-        if (checkIntersectionStop(panel.topRight, panel.getJunction4Lights(), cx, cy, stopDistance)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    private boolean checkIntersectionStop(Intersection intersection, TrafficLightController tlc, double cx, double cy,
-            int buffer) {
-        if (tlc == null || intersection == null)
-            return false;
-
-        switch (car.getDirection()) {
-            case EAST:
-
-                if (cx < intersection.x && cx >= intersection.x - buffer) {
-                    if (cy >= intersection.y && cy <= intersection.y + intersection.height) {
-                        return !tlc.canEastMove();
-                    }
-                }
-                break;
-
-            case WEST:
-                if (cx > intersection.x + intersection.width && cx <= intersection.x + intersection.width + buffer) {
-                    if (cy >= intersection.y && cy <= intersection.y + intersection.height) {
-                        return !tlc.canWestMove();
-                    }
-                }
-                break;
-
-            case SOUTH:
-                if (cy < intersection.y && cy >= intersection.y - buffer) {
-                    if (cx >= intersection.x && cx <= intersection.x + intersection.width) {
-                        return !tlc.canSouthMove();
-                    }
-                }
-                break;
-
-            case NORTH:
-                if (cy > intersection.y + intersection.height && cy <= intersection.y + intersection.height + buffer) {
-                    if (cx >= intersection.x && cx <= intersection.x + intersection.width) {
-                        return !tlc.canNorthMove();
-                    }
-                }
-                break;
-        }
-
-        return false;
-    }
-
-    private boolean checkCollisionAhead() {
-        double safetyDistance = 40.0;
-
-        for (Car other : allCars) {
-            if (other == this.car)
-                continue;
-
-            double dx = other.getCenterX() - car.getCenterX();
-            double dy = other.getCenterY() - car.getCenterY();
-            double distance = Math.hypot(dx, dy);
-
-            if (distance < 15.0) {
-                continue;
-            }
-
-            switch (car.getDirection()) {
-                case EAST:
-
-                    if (dx > 0 && dx <= safetyDistance && Math.abs(dy) < 15) {
-                        return true;
-                    }
-                    break;
-
-                case WEST:
-                    if (dx < 0 && Math.abs(dx) <= safetyDistance && Math.abs(dy) < 15) {
-                        return true;
-                    }
-                    break;
-
-                case SOUTH:
-                    if (dy > 0 && dy <= safetyDistance && Math.abs(dx) < 15) {
-                        return true;
-                    }
-                    break;
-
-                case NORTH:
-                    if (dy < 0 && Math.abs(dy) <= safetyDistance && Math.abs(dx) < 15) {
-                        return true;
-                    }
-                    break;
-            }
-        }
-
-        return false;
-    }
-
-    private void handleTopLeftTurn(TurnDirection dir) {
-        switch (dir) {
-            case LEFT:
-                Lane southLane = panel.leftRoad.lanes.get(1);
-                int lx = southLane.startX + southLane.width / 2;
-                int ly = (int) car.getCenterY();
-                car.startTurn(Direction.SOUTH, lx, ly);
-                break;
-            case RIGHT:
-                Lane northLane = panel.leftRoad.lanes.get(0);
-                lx = northLane.startX + northLane.width / 2;
-                ly = (int) car.getCenterY();
-                car.startTurn(Direction.NORTH, lx, ly);
-                break;
-            case STRAIGHT:
-                Lane eastLane = panel.topRoad.lanes.get(0);
-                lx = (int) car.getCenterX();
-                ly = eastLane.startY + eastLane.width / 2;
-                car.startTurn(Direction.EAST, lx, ly);
-                break;
-        }
-    }
-
-    private void handleTopCenterTurn(TurnDirection dir) {
-        switch (dir) {
-            case LEFT:
-                if (car.direction == Direction.EAST) {
-                    Lane northLane = panel.centerRoad.lanes.get(0);
-                    car.startTurn(Direction.NORTH, northLane.startX + northLane.width / 2, (int) car.getCenterY());
-                } else if (car.direction == Direction.WEST) {
-                    Lane southLane = panel.centerRoad.lanes.get(1);
-                    car.startTurn(Direction.SOUTH, southLane.startX + southLane.width / 2, (int) car.getCenterY());
-                } else if (car.direction == Direction.NORTH) {
-                    Lane westLane = panel.topRoad.lanes.get(1);
-                    car.startTurn(Direction.WEST, (int) car.getCenterX(), westLane.startY + westLane.width / 2);
-                } else if (car.direction == Direction.SOUTH) {
-                    Lane eastLane = panel.topRoad.lanes.get(0);
-                    car.startTurn(Direction.EAST, (int) car.getCenterX(), eastLane.startY + eastLane.width / 2);
-                }
-                break;
-            case RIGHT:
-                if (car.direction == Direction.EAST) {
-                    Lane southLane = panel.centerRoad.lanes.get(1);
-                    car.startTurn(Direction.SOUTH, southLane.startX + southLane.width / 2, (int) car.getCenterY());
-                } else if (car.direction == Direction.WEST) {
-                    Lane northLane = panel.centerRoad.lanes.get(0);
-                    car.startTurn(Direction.NORTH, northLane.startX + northLane.width / 2, (int) car.getCenterY());
-                } else if (car.direction == Direction.NORTH) {
-                    Lane eastLane = panel.topRoad.lanes.get(0);
-                    car.startTurn(Direction.EAST, (int) car.getCenterX(), eastLane.startY + eastLane.width / 2);
-                } else if (car.direction == Direction.SOUTH) {
-                    Lane westLane = panel.topRoad.lanes.get(1);
-                    car.startTurn(Direction.WEST, (int) car.getCenterX(), westLane.startY + westLane.width / 2);
-                }
-                break;
-            case STRAIGHT:
-                if (car.direction == Direction.EAST) {
-                    Lane eastLane = panel.topRoad.lanes.get(0);
-                    car.startTurn(Direction.EAST, (int) car.getCenterX(), eastLane.startY + eastLane.width / 2);
-                } else if (car.direction == Direction.WEST) {
-                    Lane westLane = panel.topRoad.lanes.get(1);
-                    car.startTurn(Direction.WEST, (int) car.getCenterX(), westLane.startY + westLane.width / 2);
-                } else if (car.direction == Direction.NORTH) {
-                    Lane northLane = panel.centerRoad.lanes.get(0);
-                    car.startTurn(Direction.NORTH, northLane.startX + northLane.width / 2, (int) car.getCenterY());
-                } else if (car.direction == Direction.SOUTH) {
-                    Lane southLane = panel.centerRoad.lanes.get(1);
-                    car.startTurn(Direction.SOUTH, southLane.startX + southLane.width / 2, (int) car.getCenterY());
-                }
-                break;
-        }
-    }
-
-    private void handleBottomLeftTurn(TurnDirection dir) {
-        switch (dir) {
-            case LEFT:
-                if (car.direction == Direction.EAST) {
-                    Lane northLane = panel.leftRoad.lanes.get(0);
-                    car.startTurn(Direction.NORTH, northLane.startX + northLane.width / 2, (int) car.getCenterY());
-                } else if (car.direction == Direction.WEST) {
-                    Lane southLane = panel.leftRoad.lanes.get(1);
-                    car.startTurn(Direction.SOUTH, southLane.startX + southLane.width / 2, (int) car.getCenterY());
-                } else if (car.direction == Direction.NORTH) {
-                    Lane westLane = panel.bottomRoad.lanes.get(1);
-                    car.startTurn(Direction.WEST, (int) car.getCenterX(), westLane.startY + westLane.width / 2);
-                } else if (car.direction == Direction.SOUTH) {
-                    Lane eastLane = panel.bottomRoad.lanes.get(0);
-                    car.startTurn(Direction.EAST, (int) car.getCenterX(), eastLane.startY + eastLane.width / 2);
-                }
-                break;
-            case RIGHT:
-                if (car.direction == Direction.EAST) {
-                    Lane southLane = panel.leftRoad.lanes.get(1);
-                    car.startTurn(Direction.SOUTH, southLane.startX + southLane.width / 2, (int) car.getCenterY());
-                } else if (car.direction == Direction.WEST) {
-                    Lane northLane = panel.leftRoad.lanes.get(0);
-                    car.startTurn(Direction.NORTH, northLane.startX + northLane.width / 2, (int) car.getCenterY());
-                } else if (car.direction == Direction.NORTH) {
-                    Lane eastLane = panel.bottomRoad.lanes.get(0);
-                    car.startTurn(Direction.EAST, (int) car.getCenterX(), eastLane.startY + eastLane.width / 2);
-                } else if (car.direction == Direction.SOUTH) {
-                    Lane westLane = panel.bottomRoad.lanes.get(1);
-                    car.startTurn(Direction.WEST, (int) car.getCenterX(), westLane.startY + westLane.width / 2);
-                }
-                break;
-            case STRAIGHT:
-                if (car.direction == Direction.EAST) {
-                    Lane eastLane = panel.bottomRoad.lanes.get(0);
-                    car.startTurn(Direction.EAST, (int) car.getCenterX(), eastLane.startY + eastLane.width / 2);
-                } else if (car.direction == Direction.WEST) {
-                    Lane westLane = panel.bottomRoad.lanes.get(1);
-                    car.startTurn(Direction.WEST, (int) car.getCenterX(), westLane.startY + westLane.width / 2);
-                } else if (car.direction == Direction.NORTH) {
-                    Lane northLane = panel.leftRoad.lanes.get(0);
-                    car.startTurn(Direction.NORTH, northLane.startX + northLane.width / 2, (int) car.getCenterY());
-                } else if (car.direction == Direction.SOUTH) {
-                    Lane southLane = panel.leftRoad.lanes.get(1);
-                    car.startTurn(Direction.SOUTH, southLane.startX + southLane.width / 2, (int) car.getCenterY());
-                }
-                break;
-        }
-    }
-
-    private void handleTopRight(TurnDirection dir) {
-        switch (dir) {
-            case LEFT:
-                Lane southLane = panel.rightRoad.lanes.get(1);
-                int lx = southLane.startX + southLane.width / 2;
-                int ly = (int) car.getCenterY();
-                car.startTurn(Direction.SOUTH, lx, ly);
-                break;
-            case RIGHT:
-                Lane northLane = panel.rightRoad.lanes.get(0);
-                lx = northLane.startX + northLane.width / 2;
-                ly = (int) car.getCenterY();
-                car.startTurn(Direction.NORTH, lx, ly);
-                break;
-            case STRAIGHT:
-                Lane eastLane = panel.topRoad.lanes.get(0);
-                lx = (int) car.getCenterX();
-                ly = eastLane.startY + eastLane.width / 2;
-                car.startTurn(Direction.EAST, lx, ly);
-                break;
-        }
-    }
-
-    private void handleBottomCenter(TurnDirection dir) {
-        switch (dir) {
-            case LEFT:
-                Lane northLane = panel.centerRoad.lanes.get(0);
-                int lx = northLane.startX + northLane.width / 2;
-                int ly = (int) car.getCenterY();
-                car.startTurn(Direction.NORTH, lx, ly);
-                break;
-            case RIGHT:
-                Lane southLane = panel.centerRoad.lanes.get(1);
-                lx = southLane.startX + southLane.width / 2;
-                ly = (int) car.getCenterY();
-                car.startTurn(Direction.SOUTH, lx, ly);
-                break;
-            case STRAIGHT:
-                Lane eastLane = panel.bottomRoad.lanes.get(0);
-                lx = (int) car.getCenterX();
-                ly = eastLane.startY + eastLane.width / 2;
-                car.startTurn(Direction.EAST, lx, ly);
-                break;
-        }
-    }
-
-    private void handleTIntersection(TurnDirection dir) {
-        switch (dir) {
-            case LEFT:
-                Lane westLane = panel.bottomRoad.lanes.get(1);
-                int lx = (int) car.getCenterX();
-                int ly = westLane.startY + westLane.width / 2;
-                car.startTurn(Direction.WEST, lx, ly);
-                break;
-            case RIGHT:
-                Lane eastLane = panel.bottomRoad.lanes.get(0);
-                lx = (int) car.getCenterX();
-                ly = eastLane.startY + eastLane.width / 2;
-                car.startTurn(Direction.EAST, lx, ly);
-                break;
-            case STRAIGHT:
-                Lane northLane = panel.rightRoad.lanes.get(0);
-                lx = northLane.startX + northLane.width / 2;
-                ly = (int) car.getCenterY();
-                car.startTurn(Direction.NORTH, lx, ly);
-                break;
-        }
+    public Car getCar() {
+        return car;
     }
 
     public void update() {
-        car.stopped = checkCollisionAhead() || isLightRedAhead();
-        if (car.stopped) {
-            return;
+        double allowed = car.maxSpeed;
+
+        if (car.state == CarState.DRIVING) {
+            allowed = Math.min(allowed, speedLimitFromSignal());
         }
+
+        double carLimit = speedLimitFromCarAhead();
+        allowed = Math.min(allowed, carLimit);
+
+        car.adjustSpeed(allowed, cfg.acceleration, cfg.brakeDeceleration);
+        car.stopped = car.speed < 0.01;
+
+        car.blockedFrames = (car.stopped && carLimit < 0.05) ? car.blockedFrames + 1 : 0;
+
+        if (!car.stopped) {
+            handleIntersection();
+        }
+        car.move();
+    }
+
+    // lights
+
+    private double speedLimitFromSignal() {
         double cx = car.getCenterX();
         double cy = car.getCenterY();
+        double limit = Double.MAX_VALUE;
 
-        boolean inTopLeft = panel.topLeft.contains((int) cx, (int) cy);
-        boolean inTopCenter = panel.topCenter.contains((int) cx, (int) cy);
-        boolean inTopRight = panel.topRight.contains((int) cx, (int) cy);
-        boolean inBottomLeft = panel.bottomLeft.contains((int) cx, (int) cy);
-        boolean inBottomCenter = panel.bottomCenter.contains((int) cx, (int) cy);
-        boolean inBottomRight = panel.bottomRight.contains((int) cx, (int) cy);
-
-        boolean inAnyIntersection = inTopLeft || inTopCenter || inTopRight || inBottomLeft || inBottomCenter
-                || inBottomRight;
-
-        if (!inAnyIntersection) {
-            car.hasTurned = false;
-        }
-
-        if (!car.hasTurned && inAnyIntersection) {
-            TurnDirection randomTurn = car.chooseRandomTurn();
-
-            if (inBottomRight) {
-                handleTIntersection(randomTurn);
-            } else if (inTopLeft) {
-                handleTopLeftTurn(randomTurn);
-            } else if (inTopCenter) {
-                handleTopCenterTurn(randomTurn);
-            } else if (inTopRight) {
-                handleTopRight(randomTurn);
-            } else if (inBottomLeft) {
-                handleBottomLeftTurn(randomTurn);
-            } else if (inBottomCenter) {
-                handleBottomCenter(randomTurn);
+        for (Intersection box : panel.getIntersections()) {
+            TrafficLightController light = box.getLight();
+            if (light == null) {
+                continue;
             }
 
-            car.hasTurned = true;
+            double distance = box.distanceToEdge(car.direction, cx, cy);
+            if (distance <= 0 || distance > LOOK_AHEAD) {
+                continue; // already inside / past it, or too far away to care
+            }
+
+            TrafficLightController.LightState state = light.getLight(car.direction);
+            if (state == TrafficLightController.LightState.GREEN) {
+                continue;
+            }
+
+            double gap = distance - STOP_LINE_OFFSET;
+            if (state == TrafficLightController.LightState.YELLOW && !canStopComfortably(gap)) {
+                continue; // too close to stop safely, so carry on through the yellow
+            }
+            limit = Math.min(limit, brakingSpeed(gap, 0));
+        }
+        return limit;
+    }
+
+    private boolean canStopComfortably(double gap) {
+        if (gap <= 0) {
+            return false;
+        }
+        double neededDeceleration = (car.speed * car.speed) / (2 * gap);
+        return neededDeceleration <= cfg.brakeDeceleration * 1.5;
+    }
+
+    /** Fastest speed that still lets the car stop (or match a leader's speed) within 'gap' pixels. */
+    private double brakingSpeed(double gap, double leaderSpeed) {
+        return Math.sqrt(leaderSpeed * leaderSpeed + 2 * cfg.brakeDeceleration * Math.max(gap, 0));
+    }
+
+    // other cars
+
+    private double speedLimitFromCarAhead() {
+        double hx = car.getHeadingX();
+        double hy = car.getHeadingY();
+        double limit = Double.MAX_VALUE;
+
+        for (Car other : allCars) {
+            if (other == car) {
+                continue;
+            }
+
+            double rx = other.getCenterX() - car.getCenterX();
+            double ry = other.getCenterY() - car.getCenterY();
+            double ahead = rx * hx + ry * hy; // how far in front
+            double side = Math.abs(rx * hy - ry * hx); // how far off to the side
+
+            if (ahead <= 0 || ahead > LOOK_AHEAD || side > car.diameter * 0.75) {
+                continue;
+            }
+
+            boolean sameWay = hx * other.getHeadingX() + hy * other.getHeadingY() > 0.5;
+            if (!sameWay && !shouldYieldTo(other)) {
+                continue;
+            }
+
+            limit = Math.min(limit, brakingSpeed(ahead - cfg.safeGap, other.speed));
+        }
+        return limit;
+    }
+
+    /**
+     * Cars on crossing paths only give way one at a time (older car has priority),
+     * otherwise two cars could each wait for the other forever.
+     */
+    private boolean shouldYieldTo(Car other) {
+        return other.id < car.id || car.blockedFrames > PATIENCE_FRAMES;
+    }
+
+    //junctions
+
+    private void handleIntersection() {
+        if (car.state == CarState.TURNING) {
+            return;
         }
 
-        car.move();
+        int cx = (int) car.getCenterX();
+        int cy = (int) car.getCenterY();
+
+        Intersection box = panel.getIntersections().stream()
+                .filter(i -> i.contains(cx, cy))
+                .findFirst()
+                .orElse(null);
+
+        if (box == null) {
+            car.hasTurned = false;
+            return;
+        }
+        if (car.hasTurned) {
+            return;
+        }
+        car.hasTurned = true;
+
+        TurnDirection turn = chooseTurn(box);
+        car.turnDirection = turn;
+
+        if (turn != TurnDirection.STRAIGHT) {
+            Direction exit = car.direction.after(turn);
+            car.startTurn(exit, box.laneExit(exit));
+        }
+    }
+
+    /** Only offers turns whose exit road exists at this junction, then lets the car's strategy pick. */
+    private TurnDirection chooseTurn(Intersection box) {
+        List<TurnDirection> options = Arrays.stream(TurnDirection.values())
+                .filter(t -> box.hasExit(car.direction.after(t)))
+                .collect(Collectors.toList());
+
+        if (options.isEmpty()) {
+            return TurnDirection.STRAIGHT;
+        }
+        return car.turnStrategy.choose(car, options);
     }
 }

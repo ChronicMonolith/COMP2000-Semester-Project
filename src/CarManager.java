@@ -1,14 +1,32 @@
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
-import javax.swing.Timer;
 
 public class CarManager {
 
     private final List<Car> cars = new ArrayList<>();
+    private final List<CarController> controllers = new ArrayList<>();
 
+    private final MapPanel panel;
+    private final CarFactory factory; // Week 7: Factory
+    private final SimulationConfig cfg = SimulationConfig.getInstance(); // Week 7: Singleton
+
+    private int frame = 0;
+    private TrafficStats stats = TrafficStats.EMPTY;
+
+    public CarManager(MapPanel panel) {
+        this.panel = panel;
+        this.factory = new CarFactory(panel);
+    }
+
+    // queries
+
+    /** A copy, so callers can loop over it while the simulation keeps adding/removing cars. */
     public List<Car> getCars() {
         return cars.stream().collect(Collectors.toList());
     }
@@ -20,88 +38,76 @@ public class CarManager {
                 .orElse(null);
     }
 
+    public long count(Predicate<Car> condition) {
+        return cars.stream().filter(condition).count();
+    }
+
+    public List<Car> select(Predicate<Car> condition) {
+        return cars.stream().filter(condition).collect(Collectors.toList());
+    }
+
+    public void forEachCar(Consumer<Car> action) {
+        cars.forEach(action);
+    }
+
     public long countDrivingCars() {
-        return cars.parallelStream()
-                .filter(c -> !c.stopped)
-                .count();
+        return count(c -> !c.stopped);
     }
 
-    private final List<CarController> controllers = new ArrayList<>();
-    private final MapPanel panel;
-    private final Timer spawnTimer;
-
-    public CarManager(MapPanel panel) {
-        this.panel = panel;
-
-        spawnTimer = new Timer(200, e -> spawnCar());
-        spawnTimer.start();
+    public TrafficStats getStats() {
+        return stats;
     }
 
-    private void spawnCar() {
-        if (cars.size() >= 30)
+    // spawning
+
+    private void trySpawn() {
+        if (cars.size() >= cfg.maxCars) {
             return;
-
-        int spawnSide = (int) (Math.random() * 3);
-        Car newCar = null;
-
-        switch (spawnSide) {
-            case 0:
-                Lane topLane = panel.topRoad.lanes.get(0);
-                int y1 = topLane.startY + (topLane.width / 2) - 7;
-                newCar = new Car(-30, y1, 2.0, Direction.EAST);
-                break;
-
-            case 1:
-                Lane bottomLane = panel.bottomRoad.lanes.get(1);
-                int y2 = bottomLane.startY + (bottomLane.width / 2) - 7;
-                newCar = new Car(1310, y2, 2.0, Direction.WEST);
-                break;
-
-            case 2:
-                Lane leftLane = panel.leftRoad.lanes.get(1);
-                int x1 = leftLane.startX + (leftLane.width / 2) - 7;
-                newCar = new Car(x1, -30, 2.0, Direction.SOUTH);
-                break;
-
         }
 
-        if (newCar != null) {
-            if (!isSpawnPointBlocked(newCar)) {
-                cars.add(newCar);
-                controllers.add(new CarController(newCar, panel, cars));
+        List<SpawnPoint> free = factory.getSpawnPoints().stream()
+                .filter(this::hasRoom)
+                .collect(Collectors.toList());
 
-                System.out.println("Spawned " + newCar.direction + " car at (" + newCar.x + ", " + newCar.y
-                        + ") | Total cars: " + cars.size());
-            } else {
-                System.out
-                        .println("Spawn BLOCKED for " + newCar.direction + " at (" + newCar.x + ", " + newCar.y + ")");
-            }
+        if (free.isEmpty()) {
+            return;
         }
+
+        SpawnPoint where = free.get(ThreadLocalRandom.current().nextInt(free.size()));
+        Car car = factory.create(where);
+        cars.add(car);
+        controllers.add(new CarController(car, panel, cars));
     }
 
-    private boolean isSpawnPointBlocked(Car newCar) {
-        for (Car c : cars) {
-            double dist = Math.hypot(c.x - newCar.x, c.y - newCar.y);
-            if (dist < 40.0) {
-                return true;
-            }
-        }
-        return false;
+    private boolean hasRoom(SpawnPoint sp) {
+        return cars.stream()
+                .noneMatch(c -> Math.hypot(c.getCenterX() - sp.x, c.getCenterY() - sp.y) < cfg.spawnClearance);
     }
+
+    // per frame
 
     public void updateAll() {
-        for (int i = cars.size() - 1; i >= 0; i--) {
-            Car car = cars.get(i);
-            CarController controller = controllers.get(i);
-
-            controller.update();
-            if (car.x < -100 || car.x > 1380 || car.y < -100 || car.y > 820) {
-
-                cars.remove(i);
-                controllers.remove(i);
-            }
+        frame++;
+        if (frame % cfg.spawnIntervalFrames == 0) {
+            trySpawn();
         }
-        System.out.println("Driving cars: " + countDrivingCars());
+
+        controllers.forEach(CarController::update);
+
+        removeCarsThatLeftTheMap();
+
+        stats = TrafficStats.compute(getCars());
+    }
+
+    private void removeCarsThatLeftTheMap() {
+        Set<Car> gone = cars.stream()
+                .filter(c -> c.x < -100 || c.x > cfg.mapWidth + 100 || c.y < -100 || c.y > cfg.mapHeight + 100)
+                .collect(Collectors.toSet());
+
+        if (!gone.isEmpty()) {
+            cars.removeAll(gone);
+            controllers.removeIf(ctrl -> gone.contains(ctrl.getCar()));
+        }
     }
 
     public void drawAll(Graphics2D g2) {
