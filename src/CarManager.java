@@ -26,7 +26,6 @@ public class CarManager {
 
     // queries
 
-    /** A copy, so callers can loop over it while the simulation keeps adding/removing cars. */
     public List<Car> getCars() {
         return cars.stream().collect(Collectors.toList());
     }

@@ -94,10 +94,6 @@ public class CarController {
         return neededDeceleration <= cfg.brakeDeceleration * 1.5;
     }
 
-    /**
-     * Fastest speed that still lets the car stop (or match a leader's speed) within
-     * 'gap' pixels.
-     */
     private double brakingSpeed(double gap, double leaderSpeed) {
         return Math.sqrt(leaderSpeed * leaderSpeed + 2 * cfg.brakeDeceleration * Math.max(gap, 0));
     }
