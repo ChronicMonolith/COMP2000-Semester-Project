@@ -1,7 +1,9 @@
 import java.awt.*;
 import java.awt.geom.Point2D;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Intersection {
     public int x;
@@ -38,7 +40,7 @@ public class Intersection {
         return y + height / 2;
     }
 
-    //roads attached to this junction 
+    // roads attached to this junction
 
     public boolean hasExit(Direction heading) {
         return exits.contains(heading);
@@ -49,16 +51,14 @@ public class Intersection {
     }
 
     public Set<Direction> getApproaches() {
-        Set<Direction> result = EnumSet.noneOf(Direction.class);
-        for (Direction d : Direction.values()) {
-            if (hasApproach(d)) {
-                result.add(d);
-            }
-        }
-        return result;
+        return Arrays.stream(Direction.values())
+                .parallel()
+                .filter(this::hasApproach)
+                .collect(Collectors.toCollection(
+                        () -> EnumSet.noneOf(Direction.class)));
     }
 
-    //lane geometry 
+    // lane geometry
     public Point2D.Double laneExit(Direction heading) {
         switch (heading) {
             case EAST:
@@ -72,7 +72,6 @@ public class Intersection {
         }
     }
 
-    
     public double distanceToEdge(Direction heading, double cx, double cy) {
         switch (heading) {
             case EAST:
@@ -86,7 +85,7 @@ public class Intersection {
         }
     }
 
-    //traffic light 
+    // traffic light
 
     public void setLight(TrafficLightController light) {
         this.light = light;
@@ -102,7 +101,7 @@ public class Intersection {
         }
     }
 
-    //drawing 
+    // drawing
 
     public void draw(Graphics2D g) {
         g.setColor(new Color(51, 51, 51));
@@ -132,4 +131,3 @@ public class Intersection {
         }
     }
 }
-
