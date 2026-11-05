@@ -59,31 +59,34 @@ public class CarController {
     private double speedLimitFromSignal() {
         double cx = car.getCenterX();
         double cy = car.getCenterY();
-        double limit = Double.MAX_VALUE;
 
-        for (Intersection box : panel.getIntersections()) {
-            TrafficLightController light = box.getLight();
-            if (light == null) {
-                continue;
-            }
+        return panel.getIntersections().stream()
+                .filter(box -> box.getLight() != null)
+                .mapToDouble(box -> {
+                    double distance = box.distanceToEdge(
+                            car.direction, cx, cy);
 
-            double distance = box.distanceToEdge(car.direction, cx, cy);
-            if (distance <= 0 || distance > LOOK_AHEAD) {
-                continue; // already inside / past it, or too far away to care
-            }
+                    if (distance <= 0 || distance > LOOK_AHEAD) {
+                        return Double.MAX_VALUE;
+                    }
 
-            TrafficLightController.LightState state = light.getLight(car.direction);
-            if (state == TrafficLightController.LightState.GREEN) {
-                continue;
-            }
+                    TrafficLightController.LightState state = box.getLight().getLight(car.direction);
 
-            double gap = distance - STOP_LINE_OFFSET;
-            if (state == TrafficLightController.LightState.YELLOW && !canStopComfortably(gap)) {
-                continue; // too close to stop safely, so carry on through the yellow
-            }
-            limit = Math.min(limit, brakingSpeed(gap, 0));
-        }
-        return limit;
+                    if (state == TrafficLightController.LightState.GREEN) {
+                        return Double.MAX_VALUE;
+                    }
+
+                    double gap = distance - STOP_LINE_OFFSET;
+
+                    if (state == TrafficLightController.LightState.YELLOW
+                            && !canStopComfortably(gap)) {
+                        return Double.MAX_VALUE;
+                    }
+
+                    return brakingSpeed(gap, 0);
+                })
+                .min()
+                .orElse(Double.MAX_VALUE);
     }
 
     private boolean canStopComfortably(double gap) {
