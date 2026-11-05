@@ -1,8 +1,10 @@
 import java.awt.*;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.IntStream;
 
 public class TrafficLightController {
 
@@ -25,8 +27,10 @@ public class TrafficLightController {
     }
 
     /**
-     * @param approaches    headings that actually arrive at this junction (a T-junction has 3)
-     * @param startOffsetMs fast-forwards the cycle so neighbouring junctions are not in sync
+     * @param approaches    headings that actually arrive at this junction (a
+     *                      T-junction has 3)
+     * @param startOffsetMs fast-forwards the cycle so neighbouring junctions are
+     *                      not in sync
      */
     public TrafficLightController(Set<Direction> approaches, int startOffsetMs) {
         this.approaches = EnumSet.copyOf(approaches);
@@ -46,12 +50,11 @@ public class TrafficLightController {
         }
     }
 
-    //used by SignalPhase
+    // used by SignalPhase
 
     void setAllRed() {
-        for (Direction d : Direction.values()) {
-            lights.put(d, LightState.RED);
-        }
+        Arrays.stream(Direction.values())
+                .forEach(d -> lights.put(d, LightState.RED));
     }
 
     void setLight(Direction d, LightState state) {
@@ -60,22 +63,20 @@ public class TrafficLightController {
 
     Direction nextApproach(Direction current) {
         int i = indexOf(current);
-        for (int step = 1; step <= ORDER.length; step++) {
-            Direction candidate = ORDER[(i + step) % ORDER.length];
-            if (approaches.contains(candidate)) {
-                return candidate;
-            }
-        }
-        return current;
+
+        return IntStream.rangeClosed(1, ORDER.length)
+                .mapToObj(step -> ORDER[(i + step) % ORDER.length])
+                .filter(approaches::contains)
+                .findFirst()
+                .orElse(current);
     }
 
     private Direction firstApproach() {
-        for (Direction d : ORDER) {
-            if (approaches.contains(d)) {
-                return d;
-            }
-        }
-        throw new IllegalArgumentException("A traffic light needs at least one approach");
+        return Arrays.stream(ORDER)
+                .filter(approaches::contains)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "A traffic light needs at least one approach"));
     }
 
     private static int indexOf(Direction d) {
@@ -87,7 +88,7 @@ public class TrafficLightController {
         return 0;
     }
 
-    //queries
+    // queries
 
     public LightState getLight(Direction heading) {
         return lights.get(heading);
@@ -145,7 +146,7 @@ public class TrafficLightController {
         return canMove(Direction.WEST);
     }
 
-    //drawing
+    // drawing
 
     public void drawVertical(
             Graphics2D g2,
