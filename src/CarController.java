@@ -103,30 +103,36 @@ public class CarController {
     private double speedLimitFromCarAhead() {
         double hx = car.getHeadingX();
         double hy = car.getHeadingY();
-        double limit = Double.MAX_VALUE;
 
-        for (Car other : allCars) {
-            if (other == car) {
-                continue;
-            }
+        return allCars.stream()
+                .filter(other -> other != car)
+                .filter(other -> {
+                    double rx = other.getCenterX() - car.getCenterX();
+                    double ry = other.getCenterY() - car.getCenterY();
 
-            double rx = other.getCenterX() - car.getCenterX();
-            double ry = other.getCenterY() - car.getCenterY();
-            double ahead = rx * hx + ry * hy; // how far in front
-            double side = Math.abs(rx * hy - ry * hx); // how far off to the side
+                    double ahead = rx * hx + ry * hy;
+                    double side = Math.abs(rx * hy - ry * hx);
 
-            if (ahead <= 0 || ahead > LOOK_AHEAD || side > car.diameter * 0.75) {
-                continue;
-            }
+                    boolean sameWay = hx * other.getHeadingX()
+                            + hy * other.getHeadingY() > 0.5;
 
-            boolean sameWay = hx * other.getHeadingX() + hy * other.getHeadingY() > 0.5;
-            if (!sameWay && !shouldYieldTo(other)) {
-                continue;
-            }
+                    return ahead > 0
+                            && ahead <= LOOK_AHEAD
+                            && side <= car.diameter * 0.75
+                            && (sameWay || shouldYieldTo(other));
+                })
+                .mapToDouble(other -> {
+                    double rx = other.getCenterX() - car.getCenterX();
+                    double ry = other.getCenterY() - car.getCenterY();
 
-            limit = Math.min(limit, brakingSpeed(ahead - cfg.safeGap, other.speed));
-        }
-        return limit;
+                    double ahead = rx * hx + ry * hy;
+
+                    return brakingSpeed(
+                            ahead - cfg.safeGap,
+                            other.speed);
+                })
+                .min()
+                .orElse(Double.MAX_VALUE);
     }
 
     /**
