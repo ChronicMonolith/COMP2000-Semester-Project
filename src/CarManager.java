@@ -38,7 +38,9 @@ public class CarManager {
     }
 
     public long count(Predicate<Car> condition) {
-        return cars.stream().filter(condition).count();
+        return cars.parallelStream()
+                .filter(condition)
+                .count();
     }
 
     public List<Car> select(Predicate<Car> condition) {
