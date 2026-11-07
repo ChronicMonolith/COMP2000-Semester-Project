@@ -4,6 +4,7 @@ import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public final class TrafficStats {
@@ -28,13 +29,25 @@ public final class TrafficStats {
     }
 
     /**
-     * @param snapshot a copy of the car list - parallel streams must never read a list
+     * @param snapshot a copy of the car list - parallel streams must never read a
+     *                 list
      *                 that the simulation could be changing at the same time.
      */
     public static TrafficStats compute(List<Car> snapshot) {
-        Map<Boolean, Long> split = snapshot.stream()
-                .collect(Collectors.partitioningBy(c -> c.stopped, Collectors.counting()));
+        int stoppedCount = snapshot.parallelStream()
+                .collect(Collector.of(
+                        () -> new int[] { 0 },
 
+                        (count, car) -> {
+                            if (car.stopped) {
+                                count[0]++;
+                            }
+                        },
+
+                        (a, b) -> {
+                            a[0] += b[0];
+                            return a;
+                        }))[0];
         ConcurrentMap<Direction, Long> byDirection = snapshot.parallelStream()
                 .collect(Collectors.groupingByConcurrent(Car::getDirection, Collectors.counting()));
 
@@ -42,8 +55,8 @@ public final class TrafficStats {
                 .collect(Collectors.summarizingDouble(c -> c.speed));
 
         return new TrafficStats(
-                split.get(false).intValue(),
-                split.get(true).intValue(),
+                snapshot.size() - stoppedCount,
+                stoppedCount,
                 speed.getAverage(),
                 speed.getCount() == 0 ? 0 : speed.getMax(),
                 byDirection);
