@@ -36,6 +36,7 @@ public class MapPanel extends JPanel implements ActionListener {
         HUD HUD;
 
         CarManager carManager;
+        private final EventLog eventLog = new EventLog();
 
         private final SimulationConfig cfg = SimulationConfig.getInstance();
 
@@ -65,6 +66,7 @@ public class MapPanel extends JPanel implements ActionListener {
                 }
 
                 carManager = new CarManager(this);
+                carManager.addListener(eventLog); // Observer: the log hears about every spawn / exit
 
                 HUD = new HUD(700, 565);
 
@@ -223,5 +225,7 @@ public class MapPanel extends JPanel implements ActionListener {
                 intersections.forEach(i -> i.drawSignals(g2));
 
                 HUD.draw(g2, carManager);
+
+                eventLog.draw(g2, 260, 270);
         }
 }

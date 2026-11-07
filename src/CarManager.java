@@ -18,6 +18,7 @@ public class CarManager {
 
     private int frame = 0;
     private TrafficStats stats = TrafficStats.EMPTY;
+    private final List<SimulationListener> listeners = new ArrayList<>(); // Week 8: Observer
 
     public CarManager(MapPanel panel) {
         this.panel = panel;
@@ -59,6 +60,15 @@ public class CarManager {
         return stats;
     }
 
+    public void addListener(SimulationListener listener) {
+    listeners.add(listener);
+    }
+
+    private void fire(SimulationEvent.Type type, String message) {
+        SimulationEvent event = new SimulationEvent(type, message);
+        listeners.forEach(l -> l.onEvent(event));
+    }
+
     // spawning
 
     private void trySpawn() {
@@ -78,6 +88,7 @@ public class CarManager {
         Car car = factory.create(where);
         cars.add(car);
         controllers.add(new CarController(car, panel, cars));
+        fire(SimulationEvent.Type.CAR_SPAWNED, "Car #" + car.id + " entered heading " + car.direction);
     }
 
     private boolean hasRoom(SpawnPoint sp) {
@@ -108,6 +119,7 @@ public class CarManager {
         if (!gone.isEmpty()) {
             cars.removeAll(gone);
             controllers.removeIf(ctrl -> gone.contains(ctrl.getCar()));
+            gone.forEach(c -> fire(SimulationEvent.Type.CAR_LEFT_MAP, "Car #" + c.id + " left the map"));
         }
     }
 
