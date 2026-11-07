@@ -31,4 +31,14 @@ public class SimulationConfig {
     public final int greenMs = 4000;
     public final int yellowMs = 1000;
     public final int allRedMs = 600;
+
+    // adaptive lights: green time grows with the number of cars waiting on that approach
+    public final boolean adaptiveLights = true;
+    public final int minGreenMs = 1500;
+    public final int maxGreenMs = 7000;
+    public final int msPerQueuedCar = 600;
+
+    // emergency vehicles
+    public final double emergencyChance = 0.03; // per spawn
+    public final double emergencySpeedBonus = 0.6;
 }

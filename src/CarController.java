@@ -37,6 +37,10 @@ public class CarController {
                 allowed = Math.min(allowed, currentLane.getSpeedLimit());
             }
 
+            if (!car.emergency) {                       // sirens ignore red lights
+                allowed = Math.min(allowed, speedLimitFromSignal());
+            }
+
             allowed = Math.min(allowed, speedLimitFromSignal());
         }
 
@@ -73,7 +77,9 @@ public class CarController {
                     TrafficLightController.LightState state = box.getLight().getLight(car.direction);
 
                     if (state == TrafficLightController.LightState.GREEN) {
-                        return Double.MAX_VALUE;
+                        return isClearingCrossTraffic(box)
+                            ? brakingSpeed(distance - STOP_LINE_OFFSET, 0)
+                            : Double.MAX_VALUE;
                     }
 
                     double gap = distance - STOP_LINE_OFFSET;
@@ -89,6 +95,12 @@ public class CarController {
                 .orElse(Double.MAX_VALUE);
     }
 
+    private boolean isClearingCrossTraffic(Intersection box) {
+        return allCars.stream().anyMatch(other -> other != car
+                && other.direction != car.direction
+                && box.contains((int) other.getCenterX(), (int) other.getCenterY()));
+    }
+
     private boolean canStopComfortably(double gap) {
         if (gap <= 0) {
             return false;
@@ -98,7 +110,10 @@ public class CarController {
     }
 
     private double brakingSpeed(double gap, double leaderSpeed) {
-        return Math.sqrt(leaderSpeed * leaderSpeed + 2 * cfg.brakeDeceleration * Math.max(gap, 0));
+        if (gap < 0) {
+            return Math.max(0, leaderSpeed + gap * 0.03); // too close: open the gap back up
+        }
+        return Math.sqrt(leaderSpeed * leaderSpeed + 2 * cfg.brakeDeceleration * gap);
     }
 
     // other cars
@@ -143,8 +158,14 @@ public class CarController {
      * otherwise two cars could each wait for the other forever.
      */
     private boolean shouldYieldTo(Car other) {
-        return other.id < car.id || car.blockedFrames > PATIENCE_FRAMES;
-    }
+        if (car.blockedFrames > PATIENCE_FRAMES) {
+            return false; // fail-safe: never wait forever
+        }
+        if (other.emergency != car.emergency) {
+            return other.emergency; // everyone gives way to the siren; it gives way to no one
+        }
+        return other.id < car.id;
+    }   
 
     // junctions
 

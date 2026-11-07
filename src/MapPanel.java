@@ -67,6 +67,7 @@ public class MapPanel extends JPanel implements ActionListener {
 
                 carManager = new CarManager(this);
                 carManager.addListener(eventLog); // Observer: the log hears about every spawn / exit
+                connectLightsToTraffic();
 
                 HUD = new HUD(700, 565);
 
@@ -179,6 +180,29 @@ public class MapPanel extends JPanel implements ActionListener {
                         Intersection junction = intersections.get(i);
                         junction.setLight(new TrafficLightController(junction.getApproaches(), i * cycleStep));
                 }
+        }
+
+        private void connectLightsToTraffic() {
+                for (Intersection junction : intersections) {
+                        junction.getLight().setDemand(approach -> (int) carManager.count(c -> {
+                                double distance = junction.distanceToEdge(c.direction, c.getCenterX(), c.getCenterY());
+                                return c.direction == approach && c.speed < 0.5 && distance > 0 && distance < 150;
+                        }));
+                }
+        }
+
+        private void setupKeys() {
+                bindKey("E", "emergency", () -> carManager.dispatchEmergency());
+        }
+
+        private void bindKey(String key, String name, Runnable action) {
+                getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(key), name);
+                getActionMap().put(name, new AbstractAction() {
+                        @Override
+                        public void actionPerformed(ActionEvent e) {
+                                action.run();
+                        }
+                });
         }
 
         public List<Intersection> getIntersections() {

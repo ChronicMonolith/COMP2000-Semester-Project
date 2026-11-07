@@ -85,11 +85,31 @@ public class CarManager {
         }
 
         SpawnPoint where = free.get(ThreadLocalRandom.current().nextInt(free.size()));
-        Car car = factory.create(where);
+        boolean emergency = !emergencyOnRoad()
+           && ThreadLocalRandom.current().nextDouble() < cfg.emergencyChance;
+        addCar(emergency ? factory.createEmergency(where) : factory.create(where));
+    }
+
+    private boolean emergencyOnRoad() {
+    return cars.stream().anyMatch(c -> c.emergency);
+    }
+
+    /** Sends an emergency vehicle in from a random free entry point (bound to the E key). */
+    public void dispatchEmergency() {
+        List<SpawnPoint> free = factory.getSpawnPoints().stream()
+                .filter(this::hasRoom)
+                .collect(Collectors.toList());
+        if (!free.isEmpty() && !emergencyOnRoad()) {
+            addCar(factory.createEmergency(free.get(ThreadLocalRandom.current().nextInt(free.size()))));
+        }
+    }
+
+    private void addCar(Car car) {
         cars.add(car);
         controllers.add(new CarController(car, panel, cars));
-        fire(SimulationEvent.Type.CAR_SPAWNED, "Car #" + car.id + " entered heading " + car.direction);
-    }
+        fire(SimulationEvent.Type.CAR_SPAWNED, (car.emergency ? "SIREN: emergency #" : "Car #") + car.id
+                + " entered heading " + car.direction);
+    }   
 
     private boolean hasRoom(SpawnPoint sp) {
         return cars.stream()

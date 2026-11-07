@@ -5,6 +5,7 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.IntStream;
+import java.util.function.ToIntFunction;
 
 public class TrafficLightController {
 
@@ -21,6 +22,21 @@ public class TrafficLightController {
 
     private SignalPhase phase;
     private int remainingMs;
+
+    private ToIntFunction<Direction> demand = d -> 0; // cars waiting on an approach, supplied by MapPanel
+
+    public void setDemand(ToIntFunction<Direction> demand) {
+        this.demand = demand;
+    }
+
+    int greenTimeFor(Direction approach) {
+        SimulationConfig cfg = SimulationConfig.getInstance();
+        if (!cfg.adaptiveLights) {
+            return cfg.greenMs;
+        }
+        int queued = demand.applyAsInt(approach);
+        return Math.max(cfg.minGreenMs, Math.min(cfg.maxGreenMs, cfg.minGreenMs + queued * cfg.msPerQueuedCar));
+    }
 
     public TrafficLightController() {
         this(EnumSet.allOf(Direction.class), 0);

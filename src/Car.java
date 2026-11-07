@@ -12,6 +12,7 @@ public class Car implements Interactable {
     public Direction direction;
     public boolean hasTurned = false;
     public boolean stopped = false;
+    public boolean emergency = false;
 
     public double acceleration;
 
@@ -136,7 +137,10 @@ public class Car implements Interactable {
     public void draw(Graphics2D g) {
         if (isSelected)
             g.setColor(Color.GREEN);
-        else
+        else if (emergency) {
+            boolean flash = (System.currentTimeMillis() / 150) % 2 == 0; // flashing siren
+            g.setColor(flash ? new Color(30, 100, 255) : Color.WHITE);
+        } else
             g.setColor(Color.RED);
 
         g.fillOval((int) Math.round(x), (int) Math.round(y), diameter, diameter);

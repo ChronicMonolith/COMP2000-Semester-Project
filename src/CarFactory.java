@@ -32,6 +32,15 @@ public class CarFactory {
         return car;
     }
 
+    public Car createEmergency(SpawnPoint sp) {
+        Car car = create(sp);
+        car.emergency = true;
+        car.maxSpeed = cfg.maxSpeed + cfg.emergencySpeedBonus;
+        car.speed = car.maxSpeed;
+        car.turnStrategy = TurnStrategy.ALWAYS_STRAIGHT;
+        return car;
+    }
+
     private List<SpawnPoint> buildSpawnPoints(MapPanel p) {
         List<SpawnPoint> list = new ArrayList<>();
         int w = cfg.mapWidth;

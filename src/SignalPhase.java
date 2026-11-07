@@ -7,16 +7,18 @@ public interface SignalPhase {
 
     class Green implements SignalPhase {
         private final Direction approach;
+        private int duration = SimulationConfig.getInstance().greenMs;
 
         public Green(Direction approach) {
             this.approach = approach;
         }
 
         public int durationMs() {
-            return SimulationConfig.getInstance().greenMs;
+            return duration;
         }
 
         public void enter(TrafficLightController light) {
+            duration = light.greenTimeFor(approach); 
             light.setAllRed();
             light.setLight(approach, TrafficLightController.LightState.GREEN);
         }
